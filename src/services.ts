@@ -1,10 +1,14 @@
 import * as vscode from 'vscode'
+import * as child_process from 'child_process'
+import * as fs from 'fs'
+import * as os from 'os'
 import { PersonaManager } from './persona/manager'
 import { TreeManager } from './dialogue/tree'
 import { KnowledgeCache } from './knowledge/cache'
 import { LlmService } from './llm/service'
 import { StorageService } from './dialogue/storage'
 import { ContextBuilder } from './dialogue/context'
+import { Lean4Service } from './lean4/service'
 
 export interface Services {
   readonly personaManager: PersonaManager
@@ -13,6 +17,7 @@ export interface Services {
   readonly knowledgeCache: KnowledgeCache
   readonly storage: StorageService
   readonly contextBuilder: ContextBuilder
+  readonly lean4: Lean4Service
 }
 
 export function createServices(context: vscode.ExtensionContext): Services {
@@ -26,6 +31,18 @@ export function createServices(context: vscode.ExtensionContext): Services {
   const workspaceRoot = workspaceFolders?.[0]?.uri.fsPath ?? ''
   const storage = new StorageService(workspaceRoot)
   const contextBuilder = new ContextBuilder(personaManager)
+  const lean4 = new Lean4Service({
+    getConfig: (key: string) =>
+      vscode.workspace.getConfiguration().get(key),
+    execFile: (file, args, options, callback) =>
+      child_process.execFile(file, args as string[], options, callback),
+    fs: {
+      writeFile: (path, data, opts, callback) =>
+        fs.writeFile(path, data, opts, callback),
+      unlink: (path, callback) => fs.unlink(path, callback),
+      tmpdir: () => os.tmpdir(),
+    },
+  })
 
   return {
     personaManager,
@@ -34,5 +51,6 @@ export function createServices(context: vscode.ExtensionContext): Services {
     knowledgeCache,
     storage,
     contextBuilder,
+    lean4,
   }
 }

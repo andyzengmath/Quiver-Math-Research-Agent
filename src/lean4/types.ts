@@ -1,6 +1,10 @@
+/**
+ * Types for Lean4 formal verification integration.
+ */
+
 export interface Lean4Result {
-  status: 'success' | 'error' | 'timeout'
-  leanCode: string
-  diagnostics: string[]
-  verifiedAt: number
+  readonly status: 'success' | 'error' | 'timeout'
+  readonly leanCode: string
+  readonly diagnostics: readonly string[]
+  readonly verifiedAt: number
 }

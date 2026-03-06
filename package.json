@@ -91,6 +91,16 @@
             },
             "required": ["id", "label", "systemPrompt"]
           }
+        },
+        "mathAgent.lean4.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable Lean4 formal verification for proof steps"
+        },
+        "mathAgent.lean4.timeoutMs": {
+          "type": "number",
+          "default": 60000,
+          "description": "Timeout in milliseconds for Lean4 verification (default: 60000)"
         }
       }
     }
