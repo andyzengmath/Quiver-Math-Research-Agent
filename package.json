@@ -134,6 +134,7 @@
     "typescript": "^5.7.0"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
     "uuid": "^13.0.0"
   }
 }

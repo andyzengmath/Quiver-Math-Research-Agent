@@ -6,6 +6,7 @@ import { PersonaManager } from './persona/manager'
 import { TreeManager } from './dialogue/tree'
 import { KnowledgeCache } from './knowledge/cache'
 import { LlmService } from './llm/service'
+import { AnthropicProvider } from './llm/providers/anthropic'
 import { StorageService } from './dialogue/storage'
 import { ContextBuilder } from './dialogue/context'
 import { Lean4Service } from './lean4/service'
@@ -27,6 +28,12 @@ export function createServices(context: vscode.ExtensionContext): Services {
   )
   const llm = new LlmService(context)
   const knowledgeCache = new KnowledgeCache(context.globalState)
+
+  const anthropicProvider = new AnthropicProvider(
+    (key: string) => llm.getApiKey(key)
+  )
+  llm.registerProvider(anthropicProvider)
+
   const workspaceFolders = vscode.workspace.workspaceFolders
   const workspaceRoot = workspaceFolders?.[0]?.uri.fsPath ?? ''
   const storage = new StorageService(workspaceRoot)

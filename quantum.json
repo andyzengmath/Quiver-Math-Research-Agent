@@ -5,7 +5,7 @@
   "prdPath": "tasks/prd-math-research-agent.md",
   "designPath": "docs/plans/2026-03-06-math-research-agent-design.md",
   "createdAt": "2026-03-06T12:00:00Z",
-  "updatedAt": "2026-03-06T21:38:21.962Z",
+  "updatedAt": "2026-03-06T21:54:51.472Z",
   "fileConflicts": [
     {
       "file": "src/knowledge/types.ts",
@@ -2196,7 +2196,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 2,
-      "status": "in_progress",
+      "status": "passed",
       "dependsOn": [
         "US-001"
       ],
@@ -2214,7 +2214,7 @@
             "npm run test:unit -- --grep 'Lean4Service'"
           ],
           "testFirst": true,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-002",
@@ -2228,19 +2228,19 @@
             "npm run test:unit -- --grep 'Lean4Service'"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         }
       ],
       "review": {
         "specCompliance": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-06T21:54:51.470Z"
         },
         "codeQuality": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-06T21:54:51.472Z"
         }
       },
       "retries": {
@@ -2753,6 +2753,21 @@
         "src/services.ts"
       ],
       "learnings": "Walk parent chain to build path, filter attached papers by scope."
+    },
+    {
+      "timestamp": "2026-03-06T21:54:51.472Z",
+      "iteration": "3",
+      "storyId": "US-030",
+      "action": "story_passed",
+      "details": "Lean4Service with isAvailable, verify (success/error/timeout), DI for testability. 13 tests.",
+      "filesChanged": [
+        "src/lean4/types.ts",
+        "src/lean4/service.ts",
+        "src/test/lean4/service.test.ts",
+        "src/services.ts",
+        "package.json"
+      ],
+      "learnings": "DI pattern with Lean4ServiceDeps for child_process, fs, os mocking."
     }
   ],
   "codebasePatterns": [
