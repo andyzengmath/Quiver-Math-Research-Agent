@@ -1,0 +1,36 @@
+{
+  "name": "math-research-agent",
+  "displayName": "Math Research Agent",
+  "description": "AI-powered math research assistant with branching dialogue, RAG knowledge retrieval, and paper writing",
+  "version": "0.1.0",
+  "publisher": "math-research-agent",
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [
+    "onCommand:mathAgent.openPanel",
+    "onChatParticipant:math-research-agent.math"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "mathAgent.openPanel",
+        "title": "Open Math Research Studio"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/vscode": "^1.100.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0"
+  }
+}
