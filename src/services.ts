@@ -4,6 +4,7 @@ import { TreeManager } from './dialogue/tree'
 import { KnowledgeCache } from './knowledge/cache'
 import { LlmService } from './llm/service'
 import { StorageService } from './dialogue/storage'
+import { ContextBuilder } from './dialogue/context'
 
 export interface Services {
   readonly personaManager: PersonaManager
@@ -11,6 +12,7 @@ export interface Services {
   readonly llm: LlmService
   readonly knowledgeCache: KnowledgeCache
   readonly storage: StorageService
+  readonly contextBuilder: ContextBuilder
 }
 
 export function createServices(context: vscode.ExtensionContext): Services {
@@ -23,6 +25,7 @@ export function createServices(context: vscode.ExtensionContext): Services {
   const workspaceFolders = vscode.workspace.workspaceFolders
   const workspaceRoot = workspaceFolders?.[0]?.uri.fsPath ?? ''
   const storage = new StorageService(workspaceRoot)
+  const contextBuilder = new ContextBuilder(personaManager)
 
   return {
     personaManager,
@@ -30,5 +33,6 @@ export function createServices(context: vscode.ExtensionContext): Services {
     llm,
     knowledgeCache,
     storage,
+    contextBuilder,
   }
 }
