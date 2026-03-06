@@ -35,13 +35,37 @@ export class SecretStorage {
   }
 }
 
+export interface Memento {
+  keys(): readonly string[]
+  get<T>(key: string): T | undefined
+  get<T>(key: string, defaultValue: T): T
+  update(key: string, value: unknown): Thenable<void>
+}
+
 export interface ExtensionContext {
   readonly secrets: {
     get(key: string): Thenable<string | undefined>
     store(key: string, value: string): Thenable<void>
     delete(key: string): Thenable<void>
   }
+  readonly globalState: Memento
   readonly subscriptions: { dispose: () => void }[]
+}
+
+export function createMockMemento(): Memento {
+  const store = new Map<string, unknown>()
+  return {
+    keys: () => Array.from(store.keys()),
+    get<T>(key: string, defaultValue?: T): T | undefined {
+      if (store.has(key)) {
+        return store.get(key) as T
+      }
+      return defaultValue
+    },
+    async update(key: string, value: unknown): Promise<void> {
+      store.set(key, value)
+    },
+  }
 }
 
 export function createMockExtensionContext(): ExtensionContext {
@@ -58,6 +82,7 @@ export function createMockExtensionContext(): ExtensionContext {
         return Promise.resolve()
       },
     },
+    globalState: createMockMemento(),
     subscriptions: [],
   }
 }
