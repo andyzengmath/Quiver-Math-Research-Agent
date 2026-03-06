@@ -135,6 +135,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
+    "openai": "^4.77.0",
     "uuid": "^13.0.0"
   }
 }

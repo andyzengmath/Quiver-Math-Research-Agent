@@ -7,6 +7,7 @@ import { TreeManager } from './dialogue/tree'
 import { KnowledgeCache } from './knowledge/cache'
 import { LlmService } from './llm/service'
 import { AnthropicProvider } from './llm/providers/anthropic'
+import { OpenAiProvider } from './llm/providers/openai'
 import { StorageService } from './dialogue/storage'
 import { ContextBuilder } from './dialogue/context'
 import { Lean4Service } from './lean4/service'
@@ -33,6 +34,7 @@ export function createServices(context: vscode.ExtensionContext): Services {
     (key: string) => llm.getApiKey(key)
   )
   llm.registerProvider(anthropicProvider)
+  llm.registerProvider(new OpenAiProvider(llm))
 
   const workspaceFolders = vscode.workspace.workspaceFolders
   const workspaceRoot = workspaceFolders?.[0]?.uri.fsPath ?? ''
