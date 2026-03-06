@@ -10,11 +10,8 @@ import { createMockExtensionContext } from '../mock-vscode'
 function createMockProvider(id: string, chunks: string[] = ['hello', ' world']): LlmProvider {
   return {
     id,
-    async *sendMessage(
-      _messages: LlmMessage[],
-      _options: LlmOptions,
-      _token: vscode.CancellationToken
-    ): AsyncIterable<string> {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    async *sendMessage(_messages: LlmMessage[], _options: LlmOptions, _token: vscode.CancellationToken): AsyncIterable<string> {
       for (const chunk of chunks) {
         yield chunk
       }
