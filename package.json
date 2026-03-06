@@ -69,12 +69,14 @@
     "watch": "tsc -watch -p ./",
     "lint": "eslint src --ext ts",
     "build:webview": "node esbuild.webview.js",
-    "test:unit": "mocha --require tsx src/test/**/*.test.ts"
+    "test:unit": "mocha --require tsx src/test/**/*.test.ts --timeout 10000"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@types/sinon": "^21.0.0",
+    "@types/uuid": "^10.0.0",
     "@types/vscode": "^1.100.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
@@ -84,9 +86,13 @@
     "mocha": "^11.7.5",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "sinon": "^21.0.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.21.0",
     "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "uuid": "^13.0.0"
   }
 }

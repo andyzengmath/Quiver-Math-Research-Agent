@@ -1,8 +1,10 @@
 import * as vscode from 'vscode'
 import { PersonaManager } from './persona/manager'
+import { TreeManager } from './dialogue/tree'
 
 export interface Services {
   readonly personaManager: PersonaManager
+  readonly treeManager: TreeManager
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -14,5 +16,6 @@ export function createServices(_context: vscode.ExtensionContext): Services {
 
   return {
     personaManager,
+    treeManager: new TreeManager(),
   }
 }
