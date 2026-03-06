@@ -25,6 +25,37 @@
     "configuration": {
       "title": "Math Research Agent",
       "properties": {
+        "mathAgent.llm.provider": {
+          "type": "string",
+          "enum": [
+            "vscode-lm",
+            "openai",
+            "anthropic",
+            "google"
+          ],
+          "default": "openai",
+          "description": "LLM provider to use for AI interactions"
+        },
+        "mathAgent.llm.openaiModel": {
+          "type": "string",
+          "default": "gpt-5.4",
+          "description": "OpenAI model name"
+        },
+        "mathAgent.llm.anthropicModel": {
+          "type": "string",
+          "default": "claude-opus-4-6",
+          "description": "Anthropic model name"
+        },
+        "mathAgent.llm.googleModel": {
+          "type": "string",
+          "default": "gemini-3.1-pro",
+          "description": "Google model name"
+        },
+        "mathAgent.llm.entityDetectionModel": {
+          "type": "string",
+          "default": "",
+          "description": "Model to use for entity detection (empty string uses the provider default)"
+        },
         "mathAgent.defaultPersona": {
           "type": "string",
           "default": "algebraist",

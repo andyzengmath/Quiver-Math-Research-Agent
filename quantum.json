@@ -5,7 +5,7 @@
   "prdPath": "tasks/prd-math-research-agent.md",
   "designPath": "docs/plans/2026-03-06-math-research-agent-design.md",
   "createdAt": "2026-03-06T12:00:00Z",
-  "updatedAt": "2026-03-06T19:30:30.962Z",
+  "updatedAt": "2026-03-06T20:20:41.172Z",
   "fileConflicts": [
     {
       "file": "src/knowledge/types.ts",
@@ -102,7 +102,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 2,
-      "status": "in_progress",
+      "status": "passed",
       "dependsOn": [
         "US-001"
       ],
@@ -160,7 +160,7 @@
             "npm run compile"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         }
       ],
       "review": {
@@ -550,7 +550,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 2,
-      "status": "in_progress",
+      "status": "passed",
       "dependsOn": [
         "US-001"
       ],
@@ -568,7 +568,7 @@
             "npx tsc --noEmit"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-002",
@@ -581,7 +581,7 @@
             "npm run test:unit -- --grep 'TreeManager'"
           ],
           "testFirst": true,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-003",
@@ -596,19 +596,19 @@
             "npm run test:unit -- --grep 'TreeManager'"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         }
       ],
       "review": {
         "specCompliance": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-06T20:20:41.172Z"
         },
         "codeQuality": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-06T20:20:41.172Z"
         }
       },
       "retries": {
@@ -837,7 +837,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 2,
-      "status": "done",
+      "status": "passed",
       "dependsOn": [
         "US-001"
       ],
@@ -874,14 +874,14 @@
       ],
       "review": {
         "specCompliance": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-06T20:11:51.232Z"
         },
         "codeQuality": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-06T20:11:51.232Z"
         }
       },
       "retries": {
@@ -2623,6 +2623,78 @@
         "tsconfig.test.json"
       ],
       "learnings": "Node 24 with tsx works well for mocha test runner. Dependency injection via ConfigGetter avoids need to mock vscode module. cross-env needed for Windows npm scripts with env vars."
+    },
+    {
+      "timestamp": "2026-03-06T21:00:00Z",
+      "iteration": 4,
+      "storyId": "US-008",
+      "action": "task_completed",
+      "details": "Dialogue tree data model (types for DialogueNode, DialogueTree, NodeMetadata, AttachedPaper) and TreeManager class with create, add, fork, switch, delete, getActivePath, loadTree methods. Stub types for Citation and Lean4Result. 17 unit tests covering all methods and boundary cases.",
+      "filesChanged": [
+        "src/dialogue/types.ts",
+        "src/dialogue/tree.ts",
+        "src/knowledge/types.ts",
+        "src/lean4/types.ts",
+        "src/test/dialogue/tree.test.ts",
+        "src/services.ts",
+        "package.json",
+        ".mocharc.yml"
+      ],
+      "learnings": "TypeScript strict mode requires explicit type annotations on variables inside while loops that reference Record<string, T> lookups to avoid TS7022 circular implicit type errors. tsx loader works better than ts-node/register for mocha on Node 24."
+    },
+    {
+      "timestamp": "2026-03-06T20:11:51.232Z",
+      "iteration": "2",
+      "storyId": "US-012",
+      "action": "story_passed",
+      "details": "PersonaManager with 7 built-in personas (algebraist, analyst, geometer, topologist, number-theorist, logician, multi-agent). 13 tests passing. ConfigGetter injection for testability.",
+      "filesChanged": [
+        "src/persona/types.ts",
+        "src/persona/manager.ts",
+        "src/services.ts",
+        "src/test/persona/manager.test.ts",
+        "package.json",
+        "tsconfig.test.json"
+      ],
+      "learnings": "Dependency-injected ConfigGetter pattern works well for testability without mocking vscode module."
+    },
+    {
+      "timestamp": "2026-03-06T21:30:00Z",
+      "iteration": 5,
+      "storyId": "US-002",
+      "action": "task_completed",
+      "details": "LLM Service multi-provider abstraction: LlmMessage/LlmOptions/LlmProvider interfaces, LlmAuthError/LlmRateLimitError error classes, LlmService class with provider registration/switching/sendMessage delegation and SecretStorage-based API key management. 11 unit tests passing. VS Code settings for provider selection and model configuration.",
+      "filesChanged": [
+        "src/llm/types.ts",
+        "src/llm/service.ts",
+        "src/services.ts",
+        "src/test/llm/service.test.ts",
+        "src/test/mock-vscode.ts",
+        "src/test/mock-vscode-runtime.js",
+        "src/test/register.js",
+        "src/test/hooks.mjs",
+        "src/test/resolver.mjs",
+        ".mocharc.json",
+        "package.json"
+      ],
+      "learnings": "Mocha v11 uses ESM import() for test files. On Node 24, use module.register() with custom resolve hook in .mjs file loaded via --import to mock vscode module. Compile-then-run (tsc + mocha on out/) is more reliable than ts-node/tsx for ESM+CJS interop in VS Code extension tests."
+    },
+    {
+      "timestamp": "2026-03-06T20:20:41.172Z",
+      "iteration": "2",
+      "storyId": "US-008",
+      "action": "story_passed",
+      "details": "TreeManager with createTree, addNode, forkFrom, switchBranch, deleteBranch, getActivePath. 17 tests passing. Types for DialogueNode, DialogueTree, AttachedPaper. Stubs for Citation and Lean4Result.",
+      "filesChanged": [
+        "src/dialogue/types.ts",
+        "src/dialogue/tree.ts",
+        "src/knowledge/types.ts",
+        "src/lean4/types.ts",
+        "src/test/dialogue/tree.test.ts",
+        "src/services.ts",
+        "package.json"
+      ],
+      "learnings": "UUID-based node IDs with parent-child linking. Walk parent chain for path construction."
     }
   ],
   "codebasePatterns": [
@@ -2633,6 +2705,13 @@
     "VS Code CSS variables (--vscode-editor-background, --vscode-editor-foreground, --vscode-button-background) for theme integration",
     "Use dependency injection (ConfigGetter function) instead of importing vscode directly in service classes -- enables unit testing with mocha+tsx without vscode module mocking",
     "Unit tests use mocha with tsx loader: mocha --require tsx src/test/**/*.test.ts",
-    "Services are wired in src/services.ts via createServices() which is called from extension.ts activate()"
+    "Services are wired in src/services.ts via createServices() which is called from extension.ts activate()",
+    "TreeManager in src/dialogue/tree.ts uses Map<string, DialogueTree> for in-memory storage; activePath tracks the current branch as an ordered array of node IDs from root to leaf",
+    "Type stubs for cross-story dependencies (Citation in src/knowledge/types.ts, Lean4Result in src/lean4/types.ts) are created as minimal interfaces to be expanded by their owning stories",
+    "Use ConfigGetter injection for vscode.workspace.getConfiguration testability",
+    "LlmService in src/llm/service.ts uses Map<string, LlmProvider> for provider registry; async generator sendMessage delegates to active provider",
+    "LLM types (LlmMessage, LlmOptions, LlmProvider, LlmAuthError, LlmRateLimitError) in src/llm/types.ts",
+    "VS Code SecretStorage accessed via LlmService.getApiKey/setApiKey for secure API key management",
+    "For mocha on Node 24 with vscode mock: use .mocharc.json with node-option import=./src/test/hooks.mjs (registers custom ESM resolver) + import=tsx/esm; compile first with tsc then run mocha on out/"
   ]
 }

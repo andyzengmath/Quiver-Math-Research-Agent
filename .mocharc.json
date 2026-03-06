@@ -1,0 +1,10 @@
+{
+  "require": [
+    "src/test/register.js"
+  ],
+  "node-option": [
+    "import=./src/test/hooks.mjs",
+    "no-warnings"
+  ],
+  "spec": "out/test/**/*.test.js"
+}

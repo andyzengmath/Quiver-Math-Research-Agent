@@ -2,11 +2,14 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "rootDir": ".",
+    "module": "commonjs",
+    "moduleResolution": "node",
     "paths": {
       "vscode": ["./src/test/__mocks__/vscode.ts"]
     },
     "baseUrl": "."
   },
+  "include": ["src/**/*.ts"],
   "ts-node": {
     "transpileOnly": true,
     "compilerOptions": {
