@@ -1,0 +1,2638 @@
+{
+  "project": "math-research-agent",
+  "branchName": "ql/math-research-agent",
+  "description": "AI-powered math research VSCode extension with branching dialogue, RAG knowledge retrieval, and paper writing",
+  "prdPath": "tasks/prd-math-research-agent.md",
+  "designPath": "docs/plans/2026-03-06-math-research-agent-design.md",
+  "createdAt": "2026-03-06T12:00:00Z",
+  "updatedAt": "2026-03-06T19:30:30.962Z",
+  "fileConflicts": [
+    {
+      "file": "src/knowledge/types.ts",
+      "stories": [
+        "US-008",
+        "US-017"
+      ],
+      "resolution": "US-017 depends on US-008 (dependency added)"
+    }
+  ],
+  "stories": [
+    {
+      "id": "US-001",
+      "title": "Extension Scaffold and Activation",
+      "description": "As a developer, I want the VS Code extension project scaffolded with proper structure so that all subsequent features have a foundation to build on.",
+      "acceptanceCriteria": [
+        "Extension activates without errors when installed in VS Code",
+        "package.json declares extension metadata, activation events, and contribution points",
+        "src/extension.ts contains activate() and deactivate() functions",
+        "Project builds with npm run compile without errors",
+        "Extension contributes a command mathAgent.openPanel visible in command palette",
+        "Typecheck/lint passes"
+      ],
+      "priority": 1,
+      "status": "passed",
+      "dependsOn": [],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Initialize project with package.json and tsconfig",
+          "description": "Create package.json with: name 'math-research-agent', displayName 'Math Research Agent', publisher field, engines.vscode '^1.100.0', main './out/extension.js'. Add activationEvents: ['onCommand:mathAgent.openPanel', 'onChatParticipant:math-research-agent.math']. Add contributes.commands with mathAgent.openPanel (title: 'Open Math Research Studio'). Create tsconfig.json targeting ES2022, module commonjs, outDir ./out, rootDir ./src, strict true. Add .eslintrc.json with @typescript-eslint. Add scripts: compile (tsc -p ./), watch (tsc -watch -p ./), lint (eslint src --ext ts). Install devDependencies: typescript, @types/vscode, @typescript-eslint/eslint-plugin, @typescript-eslint/parser, eslint. Create .vscodeignore with standard entries.",
+          "filePaths": [
+            "package.json",
+            "tsconfig.json",
+            ".eslintrc.json",
+            ".vscodeignore"
+          ],
+          "commands": [
+            "npm install",
+            "npx tsc --noEmit"
+          ],
+          "testFirst": false,
+          "status": "passed"
+        },
+        {
+          "id": "T-002",
+          "title": "Create extension entry point and directory structure",
+          "description": "Create src/extension.ts with activate(context: vscode.ExtensionContext) and deactivate() functions. In activate, register a command 'mathAgent.openPanel' that shows an info message 'Math Research Studio (placeholder)'. Create src/services.ts with export function createServices(context: ExtensionContext) that returns a typed object of all services (initially empty, each story will add its service). activate() calls createServices and stores result. Create empty directories: src/llm/, src/dialogue/, src/knowledge/, src/persona/, src/lean4/, src/chat/, src/webview/, src/webview/handlers/, src/papers/, src/utils/, src/test/. Add a .gitkeep in each empty dir.",
+          "filePaths": [
+            "src/extension.ts",
+            "src/services.ts"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run lint"
+          ],
+          "testFirst": false,
+          "status": "passed"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "passed",
+          "issues": [],
+          "reviewedAt": "2026-03-06T18:58:13.149Z"
+        },
+        "codeQuality": {
+          "status": "passed",
+          "issues": [],
+          "reviewedAt": "2026-03-06T18:58:13.149Z"
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "LLM Service — Multi-Provider Abstraction",
+      "description": "As a user, I want to connect my preferred LLM provider so that I can use GPT-5.4, Claude Opus 4.6, Gemini 3.1 Pro, or VS Code Copilot models.",
+      "acceptanceCriteria": [
+        "LlmService exposes a unified sendMessage(messages, options): AsyncIterable<string> interface",
+        "Supports four providers: vscode-lm, openai, anthropic, google",
+        "Provider selection configured via mathAgent.llm.provider setting",
+        "Model name configured per provider via mathAgent.llm.openaiModel, mathAgent.llm.anthropicModel, mathAgent.llm.googleModel settings",
+        "API keys stored in VS Code SecretStorage, never in plaintext settings",
+        "When API key is missing or invalid, throws a typed LlmAuthError with provider name",
+        "When provider API returns a rate limit error, throws a typed LlmRateLimitError",
+        "Streaming responses yield string chunks as they arrive",
+        "Unit tests cover: provider switching, auth error handling, rate limit error handling",
+        "Typecheck/lint passes"
+      ],
+      "priority": 2,
+      "status": "in_progress",
+      "dependsOn": [
+        "US-001"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Define LLM types and provider interface",
+          "description": "Create src/llm/types.ts with: LlmMessage interface ({role: 'system'|'user'|'assistant', content: string}), LlmOptions interface ({model?: string, maxTokens?: number, temperature?: number}), LlmProvider interface ({id: string, sendMessage(messages: LlmMessage[], options: LlmOptions, token: vscode.CancellationToken): AsyncIterable<string>}), LlmAuthError class extending Error (with provider: string field), LlmRateLimitError class extending Error (with retryAfterMs?: number field). Export all types.",
+          "filePaths": [
+            "src/llm/types.ts"
+          ],
+          "commands": [
+            "npx tsc --noEmit"
+          ],
+          "testFirst": false,
+          "status": "passed"
+        },
+        {
+          "id": "T-002",
+          "title": "Write tests for LlmService",
+          "description": "Create src/test/llm/service.test.ts. Test cases: (1) getProvider('openai') returns the registered OpenAI provider, (2) getProvider('unknown') throws Error, (3) setProvider switches active provider, (4) sendMessage delegates to active provider's sendMessage, (5) sendMessage with no provider configured throws LlmAuthError. Use a mock provider implementing LlmProvider interface that yields predefined chunks. Install mocha, @types/mocha, sinon, @types/sinon as devDependencies. Add test script to package.json: 'test:unit': 'mocha --require ts-node/register src/test/**/*.test.ts'. Install ts-node as devDependency.",
+          "filePaths": [
+            "src/test/llm/service.test.ts",
+            "package.json"
+          ],
+          "commands": [
+            "npm install",
+            "npm run test:unit -- --grep 'LlmService'"
+          ],
+          "testFirst": true,
+          "status": "passed"
+        },
+        {
+          "id": "T-003",
+          "title": "Implement LlmService",
+          "description": "Create src/llm/service.ts. LlmService class with: private providers Map<string, LlmProvider>, private activeProviderId string|null. Methods: registerProvider(provider: LlmProvider), setProvider(id: string) (throws if not registered), getProvider(id?: string): LlmProvider (returns active or specified, throws LlmAuthError if none), async *sendMessage(messages, options, token) (delegates to active provider). Constructor takes ExtensionContext to access SecretStorage. Add getApiKey(key: string): Promise<string|undefined> and setApiKey(key: string, value: string): Promise<void> helper methods that use context.secrets. Ensure all tests from T-002 pass.",
+          "filePaths": [
+            "src/llm/service.ts"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run test:unit -- --grep 'LlmService'"
+          ],
+          "testFirst": false,
+          "status": "passed"
+        },
+        {
+          "id": "T-004",
+          "title": "Register LlmService settings in package.json",
+          "description": "Add contributes.configuration in package.json under 'mathAgent.llm' section: provider (enum: vscode-lm, openai, anthropic, google, default: 'openai'), openaiModel (string, default: 'gpt-5.4'), anthropicModel (string, default: 'claude-opus-4-6'), googleModel (string, default: 'gemini-3.1-pro'), entityDetectionModel (string, default: ''). Verify settings appear in VS Code settings UI.",
+          "filePaths": [
+            "package.json"
+          ],
+          "commands": [
+            "npm run compile"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "LLM Service — VS Code Language Model API Provider",
+      "description": "As a Copilot subscriber, I want to use VS Code's built-in Language Model API so that I don't need a separate API key.",
+      "acceptanceCriteria": [
+        "VscodeLmProvider implements the provider interface from US-002",
+        "Calls vscode.lm.selectChatModels() to obtain available models",
+        "Handles user consent dialog (authentication prompt)",
+        "Streams responses using model.sendRequest() and iterates response.text",
+        "When no models are available, throws LlmAuthError with message 'No Copilot models available'",
+        "Unit tests cover: model selection, consent handling, streaming",
+        "Typecheck/lint passes"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "dependsOn": [
+        "US-002"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Write tests for VscodeLmProvider",
+          "description": "Create src/test/llm/providers/vscode-lm.test.ts. Mock vscode.lm.selectChatModels to return a fake model. Test: (1) sendMessage calls selectChatModels and sendRequest, yields chunks from response.text async iterable, (2) when selectChatModels returns empty array, throws LlmAuthError with 'No Copilot models available', (3) when sendRequest throws auth error, throws LlmAuthError. Use sinon stubs for vscode API.",
+          "filePaths": [
+            "src/test/llm/providers/vscode-lm.test.ts"
+          ],
+          "commands": [
+            "npm run test:unit -- --grep 'VscodeLmProvider'"
+          ],
+          "testFirst": true,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Implement VscodeLmProvider",
+          "description": "Create src/llm/providers/vscode-lm.ts. Class VscodeLmProvider implements LlmProvider. id = 'vscode-lm'. sendMessage: call vscode.lm.selectChatModels({vendor:'copilot'}), take first model, build LanguageModelChatMessage array from input messages, call model.sendRequest(chatMessages, {}, token), iterate response.text yielding each fragment. Handle empty models array by throwing LlmAuthError. Handle sendRequest errors by mapping to LlmAuthError or LlmRateLimitError. Pass all tests from T-001.",
+          "filePaths": [
+            "src/llm/providers/vscode-lm.ts"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run test:unit -- --grep 'VscodeLmProvider'"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-003",
+          "title": "Wire VscodeLmProvider into LlmService",
+          "description": "In src/extension.ts activate(): import VscodeLmProvider, instantiate it, call llmService.registerProvider(vscodeLmProvider). This ensures the provider is available when user selects 'vscode-lm' as their provider. Also instantiate LlmService with context and store as module-level export for other modules to import.",
+          "filePaths": [
+            "src/extension.ts"
+          ],
+          "commands": [
+            "npm run compile"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "LLM Service — OpenAI Provider",
+      "description": "As a user with an OpenAI API key, I want to use GPT-5.4 for mathematical reasoning.",
+      "acceptanceCriteria": [
+        "OpenAiProvider implements the provider interface from US-002",
+        "Uses openai npm package to create streaming chat completions",
+        "Reads API key from SecretStorage with key mathAgent.openaiApiKey",
+        "Default model is gpt-5.4, configurable via mathAgent.llm.openaiModel",
+        "Streaming yields chunks from the response delta content",
+        "Maps OpenAI-specific errors to LlmAuthError and LlmRateLimitError",
+        "Unit tests with mocked OpenAI client cover: streaming, auth error, rate limit",
+        "Typecheck/lint passes"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "dependsOn": [
+        "US-002"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Write tests for OpenAiProvider",
+          "description": "Create src/test/llm/providers/openai.test.ts. Install 'openai' as dependency. Mock OpenAI client. Tests: (1) sendMessage creates chat completion stream, yields delta content chunks, (2) when API key missing from SecretStorage, throws LlmAuthError with 'openai', (3) when OpenAI returns 401, throws LlmAuthError, (4) when OpenAI returns 429, throws LlmRateLimitError with retryAfterMs parsed from headers, (5) uses model from config setting mathAgent.llm.openaiModel.",
+          "filePaths": [
+            "src/test/llm/providers/openai.test.ts"
+          ],
+          "commands": [
+            "npm install openai",
+            "npm run test:unit -- --grep 'OpenAiProvider'"
+          ],
+          "testFirst": true,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Implement OpenAiProvider and wire into LlmService",
+          "description": "Create src/llm/providers/openai.ts. Class OpenAiProvider implements LlmProvider. id = 'openai'. Constructor takes LlmService ref for getApiKey access. sendMessage: get API key from SecretStorage (throw LlmAuthError if missing), create OpenAI client, call client.chat.completions.create with stream:true and model from config, iterate stream yielding chunk.choices[0]?.delta?.content. Map errors: AuthenticationError->LlmAuthError, RateLimitError->LlmRateLimitError. In src/extension.ts activate(): import OpenAiProvider, instantiate, register with llmService. Pass all tests.",
+          "filePaths": [
+            "src/llm/providers/openai.ts",
+            "src/extension.ts"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run test:unit -- --grep 'OpenAiProvider'"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "LLM Service — Anthropic Provider",
+      "description": "As a user with an Anthropic API key, I want to use Claude Opus 4.6 for mathematical reasoning.",
+      "acceptanceCriteria": [
+        "AnthropicProvider implements the provider interface from US-002",
+        "Uses @anthropic-ai/sdk npm package to create streaming messages",
+        "Reads API key from SecretStorage with key mathAgent.anthropicApiKey",
+        "Default model is claude-opus-4-6, configurable via mathAgent.llm.anthropicModel",
+        "Streaming yields chunks from message stream events",
+        "Maps Anthropic-specific errors to LlmAuthError and LlmRateLimitError",
+        "Unit tests with mocked Anthropic client cover: streaming, auth error, rate limit",
+        "Typecheck/lint passes"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "dependsOn": [
+        "US-002"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Write tests for AnthropicProvider",
+          "description": "Create src/test/llm/providers/anthropic.test.ts. Install '@anthropic-ai/sdk' as dependency. Mock Anthropic client. Tests: (1) sendMessage creates message stream, yields text delta chunks, (2) when API key missing, throws LlmAuthError with 'anthropic', (3) when Anthropic returns 401, throws LlmAuthError, (4) when Anthropic returns 429, throws LlmRateLimitError, (5) system messages are passed as the 'system' parameter (not in messages array).",
+          "filePaths": [
+            "src/test/llm/providers/anthropic.test.ts"
+          ],
+          "commands": [
+            "npm install @anthropic-ai/sdk",
+            "npm run test:unit -- --grep 'AnthropicProvider'"
+          ],
+          "testFirst": true,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Implement AnthropicProvider and wire into LlmService",
+          "description": "Create src/llm/providers/anthropic.ts. Class AnthropicProvider implements LlmProvider. id = 'anthropic'. sendMessage: get API key, create Anthropic client, extract system messages from input (Anthropic API uses separate system param), call client.messages.stream with model from config, iterate stream events yielding text deltas for content_block_delta events. Map AuthenticationError->LlmAuthError, RateLimitError->LlmRateLimitError. In src/extension.ts: import, instantiate, register. Pass all tests.",
+          "filePaths": [
+            "src/llm/providers/anthropic.ts",
+            "src/extension.ts"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run test:unit -- --grep 'AnthropicProvider'"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "LLM Service — Google AI Provider",
+      "description": "As a user with a Google AI API key, I want to use Gemini 3.1 Pro for mathematical reasoning.",
+      "acceptanceCriteria": [
+        "GoogleProvider implements the provider interface from US-002",
+        "Uses @google/generative-ai npm package to create streaming content",
+        "Reads API key from SecretStorage with key mathAgent.googleApiKey",
+        "Default model is gemini-3.1-pro, configurable via mathAgent.llm.googleModel",
+        "Streaming yields chunks from the generateContentStream response",
+        "Maps Google-specific errors to LlmAuthError and LlmRateLimitError",
+        "Unit tests with mocked Google client cover: streaming, auth error, rate limit",
+        "Typecheck/lint passes"
+      ],
+      "priority": 3,
+      "status": "pending",
+      "dependsOn": [
+        "US-002"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Write tests for GoogleProvider",
+          "description": "Create src/test/llm/providers/google.test.ts. Install '@google/generative-ai' as dependency. Mock Google GenerativeModel. Tests: (1) sendMessage calls generateContentStream, yields text chunks, (2) when API key missing, throws LlmAuthError with 'google', (3) when Google returns auth error, throws LlmAuthError, (4) when Google returns 429, throws LlmRateLimitError, (5) system instruction is set from system messages.",
+          "filePaths": [
+            "src/test/llm/providers/google.test.ts"
+          ],
+          "commands": [
+            "npm install @google/generative-ai",
+            "npm run test:unit -- --grep 'GoogleProvider'"
+          ],
+          "testFirst": true,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Implement GoogleProvider and wire into LlmService",
+          "description": "Create src/llm/providers/google.ts. Class GoogleProvider implements LlmProvider. id = 'google'. sendMessage: get API key, create GoogleGenerativeAI instance, get model with systemInstruction from system messages, call model.generateContentStream with user/assistant messages mapped to Content objects, iterate stream yielding chunk.text(). Map errors to typed errors. In src/extension.ts: import, instantiate, register. Pass all tests.",
+          "filePaths": [
+            "src/llm/providers/google.ts",
+            "src/extension.ts"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run test:unit -- --grep 'GoogleProvider'"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "First-Run Onboarding Wizard",
+      "description": "As a new user, I want a guided setup wizard so that I can configure my LLM provider without reading documentation.",
+      "acceptanceCriteria": [
+        "On first activation (no provider configured and no API keys stored), a multi-step QuickPick wizard launches",
+        "Step 1: Choose your LLM provider — shows four options: VS Code Copilot, OpenAI, Anthropic, Google",
+        "Step 2 (if not VS Code Copilot): Enter your API key — secure input box with password masking",
+        "Step 3: Test connection — sends a simple test prompt, shows success or failure message",
+        "On success: stores API key in SecretStorage, sets mathAgent.llm.provider in settings, shows Ready! notification",
+        "On failure: shows error message with Try again and Skip options",
+        "Wizard does not re-launch once a provider is configured",
+        "Typecheck/lint passes"
+      ],
+      "priority": 4,
+      "status": "pending",
+      "dependsOn": [
+        "US-002"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Implement onboarding wizard function",
+          "description": "Create src/onboarding.ts. Export async function runOnboardingWizard(llmService: LlmService, context: ExtensionContext). Step 1: vscode.window.showQuickPick with items [{label:'VS Code Copilot', id:'vscode-lm'}, {label:'OpenAI (GPT-5.4)', id:'openai'}, {label:'Anthropic (Claude Opus 4.6)', id:'anthropic'}, {label:'Google (Gemini 3.1 Pro)', id:'google'}]. If user cancels, return. Step 2: if not vscode-lm, show vscode.window.showInputBox with password:true, prompt 'Enter your API key'. Store key in SecretStorage with appropriate key name. Step 3: call llmService.setProvider(chosen), try llmService.sendMessage with test prompt 'Hello', collect first chunk. On success: update mathAgent.llm.provider config, show info message 'Ready!'. On failure: show error with 'Try again'/'Skip' options; if Try again, recurse. Set context.globalState 'mathAgent.onboardingComplete' = true.",
+          "filePaths": [
+            "src/onboarding.ts"
+          ],
+          "commands": [
+            "npm run compile"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Wire onboarding into extension activation",
+          "description": "In src/extension.ts activate(): after registering providers, check if context.globalState.get('mathAgent.onboardingComplete') is falsy AND no mathAgent.llm.provider is configured in settings. If both true, call runOnboardingWizard(llmService, context). Import runOnboardingWizard from src/onboarding.ts. Also register a command 'mathAgent.configureProvider' that always runs the wizard (for re-configuration). Add the command to package.json contributes.commands.",
+          "filePaths": [
+            "src/extension.ts",
+            "package.json"
+          ],
+          "commands": [
+            "npm run compile"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Dialogue Tree Data Model and Tree Manager",
+      "description": "As a developer, I want a tree data structure and manager so that branching conversations can be created, navigated, and persisted.",
+      "acceptanceCriteria": [
+        "DialogueNode interface: id, parentId, role ('user'|'assistant'), content, children (string[]), metadata ({ timestamp, model, persona?, sources?, lean4Result? })",
+        "DialogueTree interface: id, title, rootId, activePath (string[]), nodes (Record<string, DialogueNode>), createdAt, updatedAt",
+        "TreeManager class with methods: createTree(title), addNode(treeId, parentId, role, content, metadata), forkFrom(treeId, nodeId), switchBranch(treeId, nodeId), deleteBranch(treeId, nodeId), getActivePath(treeId)",
+        "forkFrom creates a new user node as a child of the specified node and updates activePath",
+        "deleteBranch removes the target node and all its descendants from nodes, and removes the target from its parent's children array",
+        "getActivePath returns an array of DialogueNode objects in order from root to the deepest node along activePath",
+        "Unit tests cover: create tree, add nodes, fork, switch branch, delete branch with children, get active path",
+        "Typecheck/lint passes"
+      ],
+      "priority": 2,
+      "status": "in_progress",
+      "dependsOn": [
+        "US-001"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Define dialogue tree types",
+          "description": "Create src/dialogue/types.ts. Define and export: NodeMetadata interface ({timestamp: number, model: string, persona?: string, sources?: Citation[], lean4Result?: Lean4Result}), DialogueNode interface ({id: string, parentId: string|null, role: 'user'|'assistant', content: string, children: string[], metadata: NodeMetadata}), DialogueTree interface ({id: string, title: string, rootId: string, activePath: string[], nodes: Record<string, DialogueNode>, createdAt: number, updatedAt: number, attachedPapers?: AttachedPaper[]}). Import Citation from src/knowledge/types.ts (create stub), Lean4Result from src/lean4/types.ts (create stub), AttachedPaper from src/dialogue/types.ts (define inline). Define AttachedPaper: {id: string, source: 'arxiv'|'local-pdf'|'local-tex', title: string, arxivId?: string, filePath?: string, extractedText: string, selectedSections?: string[], scope: 'global'|'branch', branchId?: string}.",
+          "filePaths": [
+            "src/dialogue/types.ts",
+            "src/knowledge/types.ts",
+            "src/lean4/types.ts"
+          ],
+          "commands": [
+            "npx tsc --noEmit"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Write tests for TreeManager",
+          "description": "Create src/test/dialogue/tree.test.ts. Tests: (1) createTree returns a tree with a root node, empty activePath, and given title, (2) addNode creates a node with correct parentId and adds it to parent's children, (3) addNode to root sets activePath to [rootId, newNodeId], (4) forkFrom creates a new child on the specified node, updates activePath to path through new child, (5) switchBranch updates activePath to follow the specified node's lineage from root, (6) deleteBranch removes node and all descendants, removes from parent's children, (7) deleteBranch on active path switches activePath to sibling or parent, (8) getActivePath returns ordered nodes from root to leaf, (9) boundary: addNode with null parentId throws, (10) boundary: deleteBranch on root throws, (11) boundary: switchBranch with invalid nodeId throws.",
+          "filePaths": [
+            "src/test/dialogue/tree.test.ts"
+          ],
+          "commands": [
+            "npm run test:unit -- --grep 'TreeManager'"
+          ],
+          "testFirst": true,
+          "status": "pending"
+        },
+        {
+          "id": "T-003",
+          "title": "Implement TreeManager",
+          "description": "Create src/dialogue/tree.ts. Class TreeManager. Private trees: Map<string, DialogueTree>. createTree(title): generate UUID for tree and root node, create root DialogueNode with role 'system', content 'Tree created', empty children. Return tree. addNode(treeId, parentId, role, content, metadata): generate UUID, create node, add to parent.children, update activePath by appending new node. forkFrom(treeId, nodeId): find node, recalculate activePath as path from root to nodeId (the fork point). User will add a message after forking. switchBranch(treeId, nodeId): walk from nodeId up to root to build path, then walk from nodeId down to deepest leaf following first child. Set as activePath. deleteBranch(treeId, nodeId): recursively collect all descendant IDs, delete from nodes map, remove from parent.children. If nodeId is in activePath, switch to nearest sibling or parent. getActivePath(treeId): map activePath IDs to nodes. Install uuid, @types/uuid. Pass all tests.",
+          "filePaths": [
+            "src/dialogue/tree.ts"
+          ],
+          "commands": [
+            "npm install uuid @types/uuid",
+            "npm run compile",
+            "npm run test:unit -- --grep 'TreeManager'"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Storage Service — Tree Persistence",
+      "description": "As a user, I want my dialogue trees saved to disk so that I can resume research sessions across VS Code restarts.",
+      "acceptanceCriteria": [
+        "StorageService saves dialogue trees as JSON to .math-agent/trees/{treeId}.json in the workspace root",
+        "Auto-creates .math-agent/trees/ directory if it doesn't exist",
+        "On every save, creates a .backup copy of the previous version at .math-agent/trees/{treeId}.backup.json",
+        "loadTree(treeId) reads and parses the JSON file, returning a DialogueTree",
+        "listTrees() returns metadata (id, title, updatedAt) for all trees in the directory",
+        "When JSON parsing fails, throws a typed CorruptTreeError with the tree ID",
+        ".math-agent/ is added to .gitignore if a .gitignore exists in the workspace",
+        "Unit tests cover: save/load round-trip, backup creation, corrupt file detection, list trees",
+        "Typecheck/lint passes"
+      ],
+      "priority": 5,
+      "status": "pending",
+      "dependsOn": [
+        "US-008"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Write tests for StorageService",
+          "description": "Create src/test/dialogue/storage.test.ts. Use a temp directory for test workspace. Tests: (1) saveTree creates .math-agent/trees/{id}.json with valid JSON, (2) saveTree creates .backup.json on second save, (3) loadTree returns parsed DialogueTree matching saved data, (4) loadTree with corrupt JSON throws CorruptTreeError, (5) loadTree with nonexistent file throws error, (6) listTrees returns array of {id, title, updatedAt} for all tree files, (7) listTrees on empty directory returns empty array, (8) saveTree auto-creates .math-agent/trees/ directory. Use fs.mkdtemp for temp dirs, cleanup in afterEach.",
+          "filePaths": [
+            "src/test/dialogue/storage.test.ts"
+          ],
+          "commands": [
+            "npm run test:unit -- --grep 'StorageService'"
+          ],
+          "testFirst": true,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Implement StorageService",
+          "description": "Create src/dialogue/storage.ts. Class StorageService. Constructor takes workspaceRoot: string. Private getTreeDir(): path.join(workspaceRoot, '.math-agent', 'trees'). saveTree(tree): ensure dir exists (fs.mkdirSync recursive), if file exists copy to .backup.json, write JSON.stringify(tree, null, 2) to {treeId}.json, update tree.updatedAt. loadTree(treeId): read file, try JSON.parse, catch and throw CorruptTreeError(treeId). listTrees(): readdir, filter .json (not .backup), parse each for {id, title, updatedAt} (use a lightweight read — just parse enough for metadata). Define CorruptTreeError class extending Error. Add ensureGitignore(): if .gitignore exists in workspace, check if '.math-agent/' is in it, if not append. Call ensureGitignore in saveTree. Pass all tests.",
+          "filePaths": [
+            "src/dialogue/storage.ts"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run test:unit -- --grep 'StorageService'"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Context Builder",
+      "description": "As a developer, I want a service that assembles LLM context from the active branch path, attached papers, and RAG results, so that each branch gets coherent context.",
+      "acceptanceCriteria": [
+        "ContextBuilder.build(tree, nodeId, options) returns an array of LLM messages in order: system prompt, attached papers context, path messages (root to nodeId), RAG context, user message",
+        "System prompt is determined by the active persona configuration",
+        "Path messages are extracted by walking from root to the specified node along parent links",
+        "Attached papers are injected as a system message with paper title and extracted text",
+        "RAG results (if any) are injected as a system message with source attribution",
+        "No messages from sibling branches are included (no cross-contamination)",
+        "Unit tests cover: basic path assembly, persona system prompt injection, attached paper inclusion, RAG inclusion, sibling exclusion",
+        "Typecheck/lint passes"
+      ],
+      "priority": 6,
+      "status": "pending",
+      "dependsOn": [
+        "US-008",
+        "US-012"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Write tests for ContextBuilder",
+          "description": "Create src/test/dialogue/context.test.ts. Build test trees with known structures (linear path, branching). Tests: (1) build() returns messages starting with system prompt from persona, (2) path messages are in order from root to target node (excluding root system node), (3) sibling branch messages are NOT included, (4) when attachedPapers provided with global scope, a system message with paper content appears after system prompt, (5) when RAG citations provided in options, a system message with formatted citations appears before user message, (6) when no persona specified, uses a default math assistant system prompt, (7) branch-scoped attached paper is included only when building context for that branch.",
+          "filePaths": [
+            "src/test/dialogue/context.test.ts"
+          ],
+          "commands": [
+            "npm run test:unit -- --grep 'ContextBuilder'"
+          ],
+          "testFirst": true,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Implement ContextBuilder",
+          "description": "Create src/dialogue/context.ts. Class ContextBuilder. Constructor takes PersonaManager ref. build(tree, nodeId, options?: {persona?: string, ragCitations?: Citation[], maxTokens?: number}): (1) Get persona system prompt from PersonaManager (or default), create system message. (2) Collect attached papers: filter tree.attachedPapers for scope='global' or scope='branch' matching current branch. Create system message with each paper's title and extractedText. (3) Walk from root to nodeId: start at nodeId, follow parentId links to root, reverse the array. Map to LlmMessage objects (skip root system node). (4) If ragCitations provided, create system message: 'Reference material from sources:\\n' + formatted citations. (5) Return assembled array. Import LlmMessage from llm/types. Pass all tests.",
+          "filePaths": [
+            "src/dialogue/context.ts"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run test:unit -- --grep 'ContextBuilder'"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Context Trimming and Memory Persistence",
+      "description": "As a user with deep research sessions, I want the system to handle context window limits gracefully while preserving a memory file of trimmed content.",
+      "acceptanceCriteria": [
+        "ContextBuilder accepts a maxTokens parameter (estimated via character count / 4 approximation)",
+        "When assembled context exceeds maxTokens, trimming order is: (1) RAG results removed first, (2) older path messages summarized, (3) attached papers preserved last",
+        "When trimming occurs, a memory file is written to .math-agent/trees/{treeId}/memory/context-trim-{timestamp}.md",
+        "Memory file Part 1: structured summary with headings Main Idea, Current Tasks, Key Results",
+        "Memory file Part 2: full transcript of the trimmed messages under heading Full Transcript",
+        "The summary in Part 1 is generated by sending the trimmed messages to the LLM with a summarization prompt",
+        "Unit tests cover: trimming order, memory file creation, memory file format",
+        "Typecheck/lint passes"
+      ],
+      "priority": 7,
+      "status": "pending",
+      "dependsOn": [
+        "US-010",
+        "US-002"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Write tests for context trimming",
+          "description": "Create src/test/dialogue/context-trimming.test.ts. Tests: (1) when total chars/4 < maxTokens, no trimming occurs and all messages returned, (2) when exceeding maxTokens, RAG system message is removed first, (3) after RAG removal if still exceeding, oldest path messages are replaced with a summary message, (4) attached paper messages are never removed (trimming stops before them), (5) estimateTokens(messages) returns sum of chars/4 for all message contents, (6) when trimming occurs, writeMemoryFile is called with correct path and content format. Mock LLM for summarization and fs for file writing.",
+          "filePaths": [
+            "src/test/dialogue/context-trimming.test.ts"
+          ],
+          "commands": [
+            "npm run test:unit -- --grep 'trimming'"
+          ],
+          "testFirst": true,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Implement trimming in ContextBuilder",
+          "description": "Modify src/dialogue/context.ts. Add to ContextBuilder: private estimateTokens(messages: LlmMessage[]): number (sum content.length/4). In build(), after assembling all messages, if options.maxTokens is set and estimateTokens > maxTokens: (1) Remove RAG system message, recheck. (2) If still over, identify path messages (not system/paper), take oldest N until under budget, replace with a single summary placeholder message '[Earlier context summarized — see memory file]'. (3) Call writeTrimMemory(treeId, trimmedMessages, llmService). writeTrimMemory: create .math-agent/trees/{treeId}/memory/ dir, call LLM with 'Summarize this conversation focusing on: Main Idea, Current Tasks, Key Results', write .md file with Part 1 (LLM summary) and Part 2 (full transcript of trimmed messages joined with newlines). Pass all tests.",
+          "filePaths": [
+            "src/dialogue/context.ts"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run test:unit -- --grep 'trimming'"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Math Persona Manager",
+      "description": "As a mathematician, I want to select a math persona (algebraist, analyst, geometer, etc.) so that the LLM adopts domain-appropriate proof strategies and vocabulary.",
+      "acceptanceCriteria": [
+        "PersonaManager provides built-in persona configs for: algebraist, analyst, geometer, topologist, number-theorist, logician",
+        "Each persona config contains: id, label, systemPrompt (minimum 100 characters of domain-specific instructions), preferredSources (subset of arxiv/nlab/wikipedia)",
+        "getPersona(id) returns the PersonaConfig for the given ID",
+        "listPersonas() returns all available personas",
+        "Default persona is configurable via mathAgent.defaultPersona setting",
+        "Custom personas can be defined in mathAgent.customPersonas setting as JSON array of PersonaConfig objects",
+        "Unit tests cover: get built-in persona, list all personas, custom persona loading, default persona setting",
+        "Typecheck/lint passes"
+      ],
+      "priority": 2,
+      "status": "done",
+      "dependsOn": [
+        "US-001"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Write tests for PersonaManager",
+          "description": "Create src/test/persona/manager.test.ts. Tests: (1) listPersonas returns 6 built-in personas, (2) getPersona('algebraist') returns config with id, label, systemPrompt (length >= 100), preferredSources, (3) getPersona('unknown') throws Error, (4) each built-in persona has a unique systemPrompt, (5) when mathAgent.customPersonas setting contains [{id:'custom1', label:'Custom', systemPrompt:'...', preferredSources:['arxiv']}], listPersonas returns 7 items, (6) getPersona('custom1') returns the custom config, (7) listPersonas includes a 'multi-agent' entry.",
+          "filePaths": [
+            "src/test/persona/manager.test.ts"
+          ],
+          "commands": [
+            "npm run test:unit -- --grep 'PersonaManager'"
+          ],
+          "testFirst": true,
+          "status": "passed"
+        },
+        {
+          "id": "T-002",
+          "title": "Implement PersonaManager and register settings",
+          "description": "Create src/persona/types.ts with PersonaConfig interface ({id: string, label: string, systemPrompt: string, preferredSources?: ('arxiv'|'nlab'|'wikipedia')[]}). Create src/persona/manager.ts. Class PersonaManager. Private builtInPersonas: PersonaConfig[] with 6 entries. Each systemPrompt should be domain-specific, e.g. algebraist: 'You are an algebraist. Approach problems using algebraic structures, exact sequences, homomorphisms, and category-theoretic constructions. Prefer abstract algebraic arguments over analytic or geometric ones. When proving theorems, look for universal properties, functorial constructions, and spectral sequences.' (100+ chars each). Add 'multi-agent' entry with label 'Multi-agent' and generic systemPrompt. getPersona(id): search builtIn + custom, throw if not found. listPersonas(): return [...builtIn, ...custom]. Read custom from vscode config mathAgent.customPersonas. Add settings to package.json: mathAgent.defaultPersona (string, default 'algebraist'), mathAgent.customPersonas (array, default []). Pass all tests.",
+          "filePaths": [
+            "src/persona/types.ts",
+            "src/persona/manager.ts",
+            "package.json"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run test:unit -- --grep 'PersonaManager'"
+          ],
+          "testFirst": false,
+          "status": "passed"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-013",
+      "title": "Knowledge Service — arXiv Client",
+      "description": "As a researcher, I want to search arXiv for papers so that I can find relevant literature during exploration.",
+      "acceptanceCriteria": [
+        "ArxivClient.search(query, maxResults) sends HTTP GET to https://export.arxiv.org/api/query with search_query and max_results params",
+        "Parses Atom XML response into an array of Citation objects with: source 'arxiv', title, url (abs link), snippet (abstract truncated to 500 chars), bibtex (auto-generated from metadata), fetchedAt",
+        "BibTeX generation includes: @article{arxivId, title, author, year, journal={arXiv preprint}, eprint={arxivId}}",
+        "Respects rate limiting: maximum 1 request per 3 seconds (queued)",
+        "Results are cached in KnowledgeCache with 24-hour TTL",
+        "When arXiv API returns non-200 status, returns empty array and logs warning (does not throw)",
+        "Unit tests with fixture XML responses cover: parsing, BibTeX generation, caching, error handling",
+        "Typecheck/lint passes"
+      ],
+      "priority": 6,
+      "status": "pending",
+      "dependsOn": [
+        "US-017"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Create arXiv fixture data and write tests",
+          "description": "Create src/test/knowledge/fixtures/arxiv-response.xml with a sample Atom XML response containing 2 entries (copy realistic structure from arXiv API docs with entry, title, summary, author, id, published fields). Create src/test/knowledge/arxiv.test.ts. Tests: (1) search('homological stability', 5) parses XML into 2 Citation objects with correct fields, (2) Citation.url is the abs link (e.g. https://arxiv.org/abs/2301.12345), (3) Citation.snippet is abstract truncated to 500 chars, (4) Citation.bibtex contains @article with correct fields, (5) when cache has results for query, HTTP is not called, (6) when arXiv returns 500, returns empty array and does not throw, (7) rate limiter prevents calls faster than 1 per 3 seconds. Mock fetch/http for all tests.",
+          "filePaths": [
+            "src/test/knowledge/fixtures/arxiv-response.xml",
+            "src/test/knowledge/arxiv.test.ts"
+          ],
+          "commands": [
+            "npm run test:unit -- --grep 'ArxivClient'"
+          ],
+          "testFirst": true,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Implement ArxivClient",
+          "description": "Create src/knowledge/arxiv.ts. Install 'fast-xml-parser' as dependency. Class ArxivClient. Constructor takes KnowledgeCache ref. Private lastRequestTime: number for rate limiting. search(query, maxResults=10): check cache first (cache.get('arxiv', query)), if hit return. Rate limit: if Date.now() - lastRequestTime < 3000, await delay. Fetch from https://export.arxiv.org/api/query?search_query=all:{query}&max_results={maxResults}. If non-200, log warning, return []. Parse XML with fast-xml-parser. Map feed.entry (handle single entry as array) to Citation[]: title from entry.title, url from entry.id (the arxiv abs URL), snippet from entry.summary (trim to 500 chars), bibtex from generateBibtex(entry), fetchedAt from Date.now(). Cache results. Return citations. Private generateBibtex(entry): extract arxivId from entry.id URL, format @article string. Pass all tests.",
+          "filePaths": [
+            "src/knowledge/arxiv.ts"
+          ],
+          "commands": [
+            "npm install fast-xml-parser",
+            "npm run compile",
+            "npm run test:unit -- --grep 'ArxivClient'"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-014",
+      "title": "Knowledge Service — Wikipedia Client",
+      "description": "As a researcher, I want to look up mathematical definitions and concepts on Wikipedia so that I get accessible explanations.",
+      "acceptanceCriteria": [
+        "WikipediaClient.search(query, maxResults) sends HTTP GET to https://en.wikipedia.org/w/api.php with action=query, list=search, srsearch, format=json",
+        "WikipediaClient.getPageContent(title) fetches page extract via action=query, prop=extracts, exintro=true",
+        "Returns array of Citation objects with: source 'wikipedia', title, url (wiki page link), snippet (extract truncated to 500 chars), fetchedAt",
+        "Results are cached in KnowledgeCache with 24-hour TTL",
+        "When Wikipedia API returns non-200 status, returns empty array and logs warning",
+        "Unit tests with fixture JSON responses cover: search, page content, caching, error handling",
+        "Typecheck/lint passes"
+      ],
+      "priority": 6,
+      "status": "pending",
+      "dependsOn": [
+        "US-017"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Create Wikipedia fixture data and write tests",
+          "description": "Create src/test/knowledge/fixtures/wikipedia-search.json with sample API response (query.search array with 2 items). Create src/test/knowledge/fixtures/wikipedia-page.json with sample extract response. Create src/test/knowledge/wikipedia.test.ts. Tests: (1) search('derived category', 5) returns Citation[] with correct titles and URLs, (2) URL format is https://en.wikipedia.org/wiki/{title with spaces as underscores}, (3) snippet is extract truncated to 500 chars, (4) getPageContent fetches and returns single Citation, (5) cache hit skips HTTP call, (6) non-200 returns empty array.",
+          "filePaths": [
+            "src/test/knowledge/fixtures/wikipedia-search.json",
+            "src/test/knowledge/fixtures/wikipedia-page.json",
+            "src/test/knowledge/wikipedia.test.ts"
+          ],
+          "commands": [
+            "npm run test:unit -- --grep 'WikipediaClient'"
+          ],
+          "testFirst": true,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Implement WikipediaClient",
+          "description": "Create src/knowledge/wikipedia.ts. Class WikipediaClient. Constructor takes KnowledgeCache ref. search(query, maxResults=5): check cache. Fetch https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={query}&srlimit={maxResults}&format=json. Parse JSON, map query.search items to Citation[]: source 'wikipedia', title from item.title, url https://en.wikipedia.org/wiki/{title.replace(/ /g,'_')}, snippet from item.snippet (strip HTML tags, truncate 500). Cache and return. getPageContent(title): fetch with prop=extracts&exintro=true&titles={title}. Extract page content, return single Citation. Handle errors: non-200 returns empty array, log warning. Pass all tests.",
+          "filePaths": [
+            "src/knowledge/wikipedia.ts"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run test:unit -- --grep 'WikipediaClient'"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-015",
+      "title": "Knowledge Service — nLab Scraper",
+      "description": "As a researcher, I want to look up definitions on nLab so that I get precise, research-level mathematical content.",
+      "acceptanceCriteria": [
+        "NlabClient.getPage(pageName) sends HTTP GET to https://ncatlab.org/nlab/show/{pageName}",
+        "Parses HTML response, extracts main content section text (strips navigation, sidebar, footer)",
+        "Returns a Citation object with: source 'nlab', title (page name), url, snippet (first 500 chars of extracted text), fetchedAt",
+        "NlabClient.search(query) attempts to fetch the page directly; if 404, returns empty array",
+        "Respects rate limiting: maximum 1 request per 5 seconds",
+        "Results are cached in KnowledgeCache with 24-hour TTL",
+        "When page returns 404 or non-200, returns empty array and logs warning",
+        "Unit tests with fixture HTML responses cover: page parsing, content extraction, caching, 404 handling",
+        "Typecheck/lint passes"
+      ],
+      "priority": 6,
+      "status": "pending",
+      "dependsOn": [
+        "US-017"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Create nLab fixture data and write tests",
+          "description": "Create src/test/knowledge/fixtures/nlab-page.html with a simplified nLab page HTML (div#Content with mathematical content, nav elements to strip). Create src/test/knowledge/nlab.test.ts. Tests: (1) getPage('derived+category') fetches correct URL and returns Citation with nlab source, (2) HTML parsing extracts only #Content div text, strips nav/sidebar, (3) snippet is first 500 chars, (4) search('derived category') converts spaces to + and calls getPage, (5) 404 response returns empty array, (6) cache hit skips HTTP, (7) rate limiter prevents calls faster than 1 per 5 seconds. Install cheerio as dependency.",
+          "filePaths": [
+            "src/test/knowledge/fixtures/nlab-page.html",
+            "src/test/knowledge/nlab.test.ts"
+          ],
+          "commands": [
+            "npm install cheerio @types/cheerio",
+            "npm run test:unit -- --grep 'NlabClient'"
+          ],
+          "testFirst": true,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Implement NlabClient",
+          "description": "Create src/knowledge/nlab.ts. Class NlabClient. Constructor takes KnowledgeCache ref. Private lastRequestTime for rate limiting (5s). getPage(pageName): check cache('nlab', pageName). Rate limit. Fetch https://ncatlab.org/nlab/show/{pageName}. If 404 or non-200, return []. Parse HTML with cheerio, select '#Content' or 'div.content', remove nav/script/style elements, get text content. Create Citation: source 'nlab', title pageName.replace(/\\+/g, ' '), url, snippet (text trimmed to 500 chars), fetchedAt. Cache and return [citation]. search(query): convert spaces to +, call getPage. Pass all tests.",
+          "filePaths": [
+            "src/knowledge/nlab.ts"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run test:unit -- --grep 'NlabClient'"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-016",
+      "title": "Knowledge Service — RAG Orchestrator and Entity Detection",
+      "description": "As a user, I want math entities in my messages to be auto-detected and looked up across all sources so that my conversations are grounded in accurate knowledge.",
+      "acceptanceCriteria": [
+        "EntityDetector uses a two-pass approach: (1) keyword matching against a bundled dictionary of ~2000 common math terms, (2) for unmatched messages, sends to a fast/cheap LLM asking 'List the mathematical entities in this text'",
+        "RagOrchestrator.enrich(message, options) calls EntityDetector, then queries arXiv, Wikipedia, and nLab in parallel for each detected entity",
+        "Returns aggregated Citation[] results, deduplicated by URL",
+        "RAG is togglable via mathAgent.rag.enabled setting (default: true)",
+        "When a source fails, the orchestrator continues with remaining sources (no all-or-nothing failure)",
+        "UI receives a ragStatus object: { enabled, sources: { arxiv, wikipedia, nlab status }, citations }",
+        "Unit tests cover: entity detection (keyword hit, LLM fallback), parallel fetch, deduplication, partial failure, toggle off",
+        "Typecheck/lint passes"
+      ],
+      "priority": 7,
+      "status": "pending",
+      "dependsOn": [
+        "US-013",
+        "US-014",
+        "US-015",
+        "US-002"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Create math entity dictionary and EntityDetector",
+          "description": "Create src/knowledge/math-terms.json with ~200 common math terms for v1 (group, ring, field, topology, manifold, functor, category, sheaf, cohomology, homology, spectral sequence, derived category, exact sequence, fiber bundle, homotopy, etc — cover major areas: algebra, topology, analysis, geometry, logic). Create src/knowledge/entity-detector.ts. Class EntityDetector. Constructor takes optional LlmService ref. detect(text: string): string[] — Pass 1: scan text for matches against math-terms.json (case-insensitive, word-boundary matching). If matches found, return them. Pass 2: if no keyword matches and llmService available, send text to LLM with prompt 'List mathematical entities/concepts mentioned in this text as a JSON array of strings. Return only the array.' Parse response as string[]. If LLM unavailable or fails, return [].",
+          "filePaths": [
+            "src/knowledge/math-terms.json",
+            "src/knowledge/entity-detector.ts"
+          ],
+          "commands": [
+            "npm run compile"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Write tests for RagOrchestrator",
+          "description": "Create src/test/knowledge/rag-orchestrator.test.ts. Mock ArxivClient, WikipediaClient, NlabClient, EntityDetector. Tests: (1) enrich('Consider the spectral sequence') detects 'spectral sequence' and queries all 3 sources in parallel, (2) returns deduplicated Citation[] (no duplicate URLs), (3) returns ragStatus with per-source success/failed status, (4) when nLab fails, continues with arxiv+wikipedia and marks nlab as 'failed', (5) when mathAgent.rag.enabled is false, returns empty citations and ragStatus.enabled=false, (6) when EntityDetector returns empty, no source queries are made.",
+          "filePaths": [
+            "src/test/knowledge/rag-orchestrator.test.ts"
+          ],
+          "commands": [
+            "npm run test:unit -- --grep 'RagOrchestrator'"
+          ],
+          "testFirst": true,
+          "status": "pending"
+        },
+        {
+          "id": "T-003",
+          "title": "Implement RagOrchestrator",
+          "description": "Create src/knowledge/rag-orchestrator.ts. Define RagStatus type: {enabled: boolean, sources: {arxiv: 'success'|'failed'|'skipped', wikipedia: ..., nlab: ...}, citations: Citation[]}. Class RagOrchestrator. Constructor takes ArxivClient, WikipediaClient, NlabClient, EntityDetector. enrich(message, options?): if rag.enabled setting is false, return {enabled:false, sources all 'skipped', citations:[]}. Call entityDetector.detect(message). For each entity, use Promise.allSettled to query all 3 sources in parallel. Aggregate results, deduplicate by URL. Build ragStatus from settled promise results (fulfilled='success', rejected='failed'). Return ragStatus. Add mathAgent.rag.enabled (boolean, default true) and mathAgent.rag.cacheTtlHours (number, default 24) to package.json settings. Pass all tests.",
+          "filePaths": [
+            "src/knowledge/rag-orchestrator.ts",
+            "package.json"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run test:unit -- --grep 'RagOrchestrator'"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-017",
+      "title": "Knowledge Cache",
+      "description": "As a developer, I want a caching layer for knowledge queries so that repeated lookups are fast and respectful of rate limits.",
+      "acceptanceCriteria": [
+        "KnowledgeCache stores query results keyed by {source}:{query} in VS Code globalState (Memento API)",
+        "get(source, query) returns cached Citation[] if entry exists and is within TTL (default 24 hours)",
+        "set(source, query, citations) stores citations with current timestamp",
+        "isExpired(entry) returns true if Date.now() - entry.fetchedAt > ttl",
+        "clear() removes all cached entries",
+        "TTL is configurable via mathAgent.rag.cacheTtlHours setting",
+        "Unit tests cover: set/get, TTL expiry, cache miss, clear",
+        "Typecheck/lint passes"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "dependsOn": [
+        "US-001",
+        "US-008"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Define knowledge types",
+          "description": "Update src/knowledge/types.ts (stub created in US-008). Define and export: Citation interface ({source: 'arxiv'|'nlab'|'wikipedia', title: string, url: string, snippet: string, bibtex?: string, fetchedAt: number}), CacheEntry interface ({citations: Citation[], storedAt: number}), KnowledgeCacheData type as Record<string, CacheEntry>.",
+          "filePaths": [
+            "src/knowledge/types.ts"
+          ],
+          "commands": [
+            "npx tsc --noEmit"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Write tests for KnowledgeCache",
+          "description": "Create src/test/knowledge/cache.test.ts. Create a mock Memento (globalState) that stores data in a plain Map. Tests: (1) set then get returns same citations, (2) get with expired TTL returns undefined, (3) get with valid TTL returns citations, (4) get for nonexistent key returns undefined, (5) clear removes all entries, (6) key format is 'source:query', (7) isExpired returns true when age > ttlMs.",
+          "filePaths": [
+            "src/test/knowledge/cache.test.ts"
+          ],
+          "commands": [
+            "npm run test:unit -- --grep 'KnowledgeCache'"
+          ],
+          "testFirst": true,
+          "status": "pending"
+        },
+        {
+          "id": "T-003",
+          "title": "Implement KnowledgeCache",
+          "description": "Create src/knowledge/cache.ts. Class KnowledgeCache. Constructor takes globalState: vscode.Memento. Private cacheKey = 'mathAgent.knowledgeCache'. Private getTtlMs(): reads mathAgent.rag.cacheTtlHours from config (default 24), returns hours * 3600000. get(source, query): read cache data from globalState, look up '{source}:{query}', return citations if not expired, else undefined. set(source, query, citations): update cache data in globalState. isExpired(entry): Date.now() - entry.storedAt > getTtlMs(). clear(): set cache key to {} in globalState. Pass all tests.",
+          "filePaths": [
+            "src/knowledge/cache.ts"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run test:unit -- --grep 'KnowledgeCache'"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-018",
+      "title": "Chat Participant — @math Registration and Basic Chat",
+      "description": "As a Copilot user, I want to type @math in Copilot Chat to ask quick math questions.",
+      "acceptanceCriteria": [
+        "Extension registers a chat participant with id math-research-agent.math, name math, fullName Math Research Agent, isSticky true",
+        "Chat participant declared in package.json under contributes.chatParticipants",
+        "Request handler receives user prompt, calls LlmService with the active persona's system prompt, streams response back via stream.markdown()",
+        "Responses include LaTeX (passed through as-is in markdown)",
+        "When no LLM is configured, response includes a button Configure LLM that triggers the onboarding wizard",
+        "Typecheck/lint passes"
+      ],
+      "priority": 8,
+      "status": "pending",
+      "dependsOn": [
+        "US-002",
+        "US-010",
+        "US-012"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Register chat participant in package.json",
+          "description": "Add to package.json contributes.chatParticipants array: {id: 'math-research-agent.math', name: 'math', fullName: 'Math Research Agent', description: 'Ask math questions, explore proofs, search literature', isSticky: true}. Add to activationEvents: 'onChatParticipant:math-research-agent.math' if not already present.",
+          "filePaths": [
+            "package.json"
+          ],
+          "commands": [
+            "npm run compile"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Implement chat participant request handler",
+          "description": "Create src/chat/participant.ts. Export function registerChatParticipant(context, llmService, personaManager, contextBuilder). Inside: call vscode.chat.createChatParticipant('math-research-agent.math', handler). Handler function: get persona from personaManager (default persona), build system prompt. If no LLM configured (llmService.getProvider() throws), use stream.button({command:'mathAgent.configureProvider', title:'Configure LLM'}) and stream.markdown('No LLM provider configured.'). Otherwise: build messages array with system prompt + user prompt, call llmService.sendMessage, iterate chunks writing stream.markdown(chunk). Return {}.",
+          "filePaths": [
+            "src/chat/participant.ts"
+          ],
+          "commands": [
+            "npm run compile"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-003",
+          "title": "Wire chat participant into extension activation",
+          "description": "In src/extension.ts activate(): import registerChatParticipant from src/chat/participant. Call registerChatParticipant(context, llmService, personaManager, contextBuilder) after all services are instantiated. Ensure personaManager and contextBuilder are instantiated earlier in activate().",
+          "filePaths": [
+            "src/extension.ts"
+          ],
+          "commands": [
+            "npm run compile"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-019",
+      "title": "Chat Participant — Slash Commands",
+      "description": "As a user, I want slash commands in @math chat for explicit actions like searching sources or opening the Research Panel.",
+      "acceptanceCriteria": [
+        "Chat participant registers three commands in package.json: /search, /arxiv, /studio",
+        "/search [query] triggers RAG orchestrator with the query, returns formatted citation results",
+        "/arxiv [query] triggers arXiv client only, returns formatted paper results with BibTeX",
+        "/studio executes mathAgent.openPanel command to open the Research Panel",
+        "Commands are detected via request.command in the handler",
+        "Unknown commands fall through to normal chat behavior",
+        "Typecheck/lint passes"
+      ],
+      "priority": 9,
+      "status": "pending",
+      "dependsOn": [
+        "US-018",
+        "US-016"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Register slash commands in package.json",
+          "description": "In package.json, add commands array to the chat participant entry: [{name:'search', description:'Search arXiv, Wikipedia, and nLab'}, {name:'arxiv', description:'Search arXiv papers'}, {name:'studio', description:'Open Math Research Studio'}].",
+          "filePaths": [
+            "package.json"
+          ],
+          "commands": [
+            "npm run compile"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Implement slash command handling",
+          "description": "Modify src/chat/participant.ts handler. Before default LLM flow, check request.command. If 'search': call ragOrchestrator.enrich(request.prompt) (import RagOrchestrator), format citations as markdown table (Title | Source | Snippet | URL), stream result. If 'arxiv': call arxivClient.search(request.prompt), format results with BibTeX in code blocks. If 'studio': execute vscode.commands.executeCommand('mathAgent.openPanel'), stream 'Opening Math Research Studio...'. Else: fall through to normal chat. Pass ragOrchestrator and arxivClient to registerChatParticipant (update signature). Update extension.ts to instantiate and pass these dependencies.",
+          "filePaths": [
+            "src/chat/participant.ts",
+            "src/extension.ts"
+          ],
+          "commands": [
+            "npm run compile"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-020",
+      "title": "Webview Panel — Shell and Tab Navigation",
+      "description": "As a user, I want to open the Math Research Panel with Research and Write tabs so that I have a workspace for deep exploration.",
+      "acceptanceCriteria": [
+        "Command mathAgent.openPanel creates or reveals a WebviewPanel with viewType mathAgent.researchPanel",
+        "Webview loads a React application bundled with webpack/esbuild",
+        "React app renders a tab bar with two tabs: Research and Write",
+        "Clicking a tab switches the visible content area (no page reload)",
+        "Panel retains state when hidden and re-shown (retainContextWhenHidden: true)",
+        "Panel title is Math Research Studio",
+        "Webview CSP allows loading bundled scripts, styles, and KaTeX fonts from the extension",
+        "Verify in browser (webview): tab switching works, no console errors",
+        "Typecheck/lint passes"
+      ],
+      "priority": 2,
+      "status": "passed",
+      "dependsOn": [
+        "US-001"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Set up React webview build pipeline",
+          "description": "Install dependencies: react, react-dom, @types/react, @types/react-dom. Create webview-ui/ directory. Create webview-ui/tsconfig.json targeting ES2020, jsx react-jsx, module ESNext. Create esbuild.webview.js build script that bundles webview-ui/src/index.tsx to out/webview/bundle.js with React, CSS, and asset loaders. Add 'build:webview' script to package.json. Create webview-ui/src/index.tsx that renders <App/> into document.getElementById('root').",
+          "filePaths": [
+            "webview-ui/tsconfig.json",
+            "esbuild.webview.js",
+            "webview-ui/src/index.tsx",
+            "package.json"
+          ],
+          "commands": [
+            "npm install react react-dom @types/react @types/react-dom esbuild",
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "passed"
+        },
+        {
+          "id": "T-002",
+          "title": "Create App component with tab navigation",
+          "description": "Create webview-ui/src/App.tsx. Functional component with useState for activeTab ('research'|'write'). Render: a header div with two tab buttons ('Research', 'Write'), styled with VS Code CSS variables (--vscode-editor-background, --vscode-editor-foreground, --vscode-button-background). Active tab has underline/highlight. Below tabs, conditionally render <ResearchTab/> or <WriteTab/> placeholder divs based on activeTab. Create webview-ui/src/App.css with tab styles using VS Code theme variables. Create webview-ui/src/components/ResearchTab.tsx (placeholder div 'Research Tab'). Create webview-ui/src/components/WriteTab.tsx (placeholder div 'Write Tab').",
+          "filePaths": [
+            "webview-ui/src/App.tsx",
+            "webview-ui/src/App.css",
+            "webview-ui/src/components/ResearchTab.tsx",
+            "webview-ui/src/components/WriteTab.tsx"
+          ],
+          "commands": [
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "passed"
+        },
+        {
+          "id": "T-003",
+          "title": "Create WebviewPanel provider and wire into extension",
+          "description": "Create src/webview/panel.ts. Class MathResearchPanel. Static createOrShow(context: ExtensionContext): if existing panel, reveal it; else create vscode.window.createWebviewPanel('mathAgent.researchPanel', 'Math Research Studio', ViewColumn.Beside, {enableScripts:true, retainContextWhenHidden:true, localResourceRoots:[Uri.joinPath(context.extensionUri,'out','webview'), Uri.joinPath(context.extensionUri,'media')]}). Set webview.html to HTML template with CSP meta tag (script-src from webview.cspSource, style-src from webview.cspSource + 'unsafe-inline', font-src from webview.cspSource), <div id='root'></div>, script tag pointing to bundle.js URI. In src/extension.ts: update the mathAgent.openPanel command handler to call MathResearchPanel.createOrShow(context).",
+          "filePaths": [
+            "src/webview/panel.ts",
+            "src/extension.ts"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "passed"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "passed",
+          "issues": [],
+          "reviewedAt": "2026-03-06T19:30:30.962Z"
+        },
+        "codeQuality": {
+          "status": "passed",
+          "issues": [],
+          "reviewedAt": "2026-03-06T19:30:30.962Z"
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-021",
+      "title": "Webview — Research Tab Message Display with KaTeX",
+      "description": "As a user, I want to see chat messages in the Research tab with LaTeX rendered correctly.",
+      "acceptanceCriteria": [
+        "Research tab displays a scrollable list of message bubbles (user messages right-aligned, assistant left-aligned)",
+        "Each message content is rendered via markdown-it with markdown-it-katex plugin",
+        "Inline LaTeX ($...$) renders as inline math",
+        "Display LaTeX ($$...$$) renders as centered block math",
+        "Malformed LaTeX renders as raw text (graceful fallback, no crash)",
+        "KaTeX CSS and fonts are bundled with the extension and loaded in the webview",
+        "A text input area at the bottom allows typing and submitting messages (Enter key or Send button)",
+        "Verify in browser (webview): LaTeX renders correctly",
+        "Typecheck/lint passes"
+      ],
+      "priority": 5,
+      "status": "pending",
+      "dependsOn": [
+        "US-020"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Bundle KaTeX assets and set up markdown-it",
+          "description": "Install: katex, markdown-it, @vscode/markdown-it-katex (or markdown-it-katex). Copy KaTeX CSS and font files to media/katex/ directory (katex.min.css + fonts/). Update webview HTML template in src/webview/panel.ts to include <link> tag for katex CSS URI. In webview-ui, create src/utils/renderMarkdown.ts: import markdownit and katex plugin, create configured md instance with katex plugin (throwOnError: false for graceful fallback). Export function renderMathMarkdown(text: string): string that returns md.render(text).",
+          "filePaths": [
+            "webview-ui/src/utils/renderMarkdown.ts",
+            "src/webview/panel.ts"
+          ],
+          "commands": [
+            "npm install katex markdown-it @vscode/markdown-it-katex",
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Create MessageList and MessageBubble components",
+          "description": "Create webview-ui/src/components/MessageBubble.tsx. Props: {role: 'user'|'assistant', content: string}. Render a div with className based on role (user-message right-aligned, assistant-message left-aligned). Content rendered via renderMathMarkdown() using dangerouslySetInnerHTML (safe since KaTeX output is trusted). Create webview-ui/src/components/MessageList.tsx. Props: {messages: Array<{id,role,content}>}. Render scrollable div with MessageBubble for each message. Auto-scroll to bottom on new messages (useEffect + useRef on container). Create webview-ui/src/components/MessageInput.tsx. Text input + Send button. Enter submits (shift+Enter for newline). Calls onSend(text) prop. Update ResearchTab.tsx to use MessageList and MessageInput with mock data for testing.",
+          "filePaths": [
+            "webview-ui/src/components/MessageBubble.tsx",
+            "webview-ui/src/components/MessageList.tsx",
+            "webview-ui/src/components/MessageInput.tsx",
+            "webview-ui/src/components/ResearchTab.tsx"
+          ],
+          "commands": [
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-003",
+          "title": "Style message bubbles with VS Code theme",
+          "description": "Create webview-ui/src/components/MessageList.css. Style: .message-list (flex column, overflow-y auto, flex 1, padding 16px), .message-bubble (max-width 80%, padding 12px, border-radius 8px, margin-bottom 8px), .user-message (align-self flex-end, background var(--vscode-inputValidation-infoBackground)), .assistant-message (align-self flex-start, background var(--vscode-editor-background), border 1px solid var(--vscode-panel-border)). .message-input-container (display flex, padding 8px, border-top). Input (flex 1, background var(--vscode-input-background), color var(--vscode-input-foreground), border var(--vscode-input-border)). Send button styled with --vscode-button-background. Import CSS in components.",
+          "filePaths": [
+            "webview-ui/src/components/MessageList.css"
+          ],
+          "commands": [
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-004",
+          "title": "Set up webview test infrastructure",
+          "description": "Install vitest, @testing-library/react, @testing-library/jest-dom, jsdom as devDependencies. Create webview-ui/vitest.config.ts with jsdom environment, setup file pointing to webview-ui/src/test/setup.ts. Create webview-ui/src/test/setup.ts importing @testing-library/jest-dom. Add script to package.json: 'test:webview': 'vitest run --config webview-ui/vitest.config.ts'. Create webview-ui/src/test/components/MessageBubble.test.tsx: test (1) renders user message right-aligned, (2) renders assistant message left-aligned, (3) renders LaTeX content via KaTeX without crashing, (4) malformed LaTeX renders as raw text without crash. Verify tests pass.",
+          "filePaths": [
+            "webview-ui/vitest.config.ts",
+            "webview-ui/src/test/setup.ts",
+            "webview-ui/src/test/components/MessageBubble.test.tsx",
+            "package.json"
+          ],
+          "commands": [
+            "npm install -D vitest @testing-library/react @testing-library/jest-dom jsdom",
+            "npm run test:webview"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-022",
+      "title": "Webview — Research Tab Message Streaming",
+      "description": "As a user, I want to see LLM responses stream in real-time so that I don't wait for the full response.",
+      "acceptanceCriteria": [
+        "When user submits a message, extension host receives it via postMessage({ type: 'send', content, nodeId })",
+        "Extension host creates a user node in the tree, sends prompt to LLM via ContextBuilder + LlmService",
+        "As LLM streams chunks, extension host sends postMessage({ type: 'streamChunk', nodeId, text }) to webview",
+        "Webview appends chunks to the active assistant message bubble, re-rendering KaTeX on each update (debounced to every 100ms)",
+        "When stream completes, extension host sends postMessage({ type: 'streamEnd', nodeId })",
+        "A Stop button appears during streaming, sending postMessage({ type: 'stopStream' }) which cancels the LLM request",
+        "Partial responses from cancelled streams are preserved in the node with an Incomplete indicator",
+        "Verify in browser (webview): text appears progressively, LaTeX renders during streaming",
+        "Typecheck/lint passes"
+      ],
+      "priority": 8,
+      "status": "pending",
+      "dependsOn": [
+        "US-021",
+        "US-002",
+        "US-008",
+        "US-010"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Define webview message protocol and handler registry",
+          "description": "Create src/webview/protocol.ts. Define discriminated union types. WebviewToHost: {type:'send', content:string, nodeId?:string} | {type:'fork', nodeId:string} | {type:'deleteBranch', nodeId:string} | {type:'switchBranch', nodeId:string} | {type:'stopStream'} | {type:'setPersona', personaId:string} | {type:'setModel', provider:string, model:string} | {type:'requestState'} | {type:'addPaper'} | {type:'verifyLean4', nodeId:string} | {type:'retryLean4', nodeId:string, attempt:number} | {type:'getTexFiles'} | {type:'selectTexFile', filePath:string} | {type:'draftFromBranch', branchNodeId:string} | {type:'insertIntoFile', filePath:string, afterLine:number, content:string} | {type:'listTrees'} | {type:'selectTree', treeId:string} | {type:'createTree', title:string} | {type:'renameTree', treeId:string, title:string} | {type:'deleteTree', treeId:string}. HostToWebview: {type:'treeState', tree:DialogueTree} | {type:'streamChunk', nodeId:string, text:string} | {type:'streamEnd', nodeId:string} | {type:'ragStatus', nodeId:string, status:RagStatus} | {type:'personas', personas:PersonaConfig[]} | {type:'providers', providers:Array<{id:string,model:string}>} | {type:'multiAgentResult', responses:any[], synthesis:string} | {type:'lean4Result', nodeId:string, result:any} | {type:'treeList', trees:any[]} | {type:'texFiles', files:any[]} | {type:'texStructure', structure:any[]} | {type:'draftResult', latex:string}. Create src/webview/message-handler.ts: export type MessageHandler = (msg: WebviewToHost, panel: MathResearchPanel) => Promise<void>. Export class MessageHandlerRegistry with private handlers: Map<string, MessageHandler>. Methods: register(type: string, handler: MessageHandler), handle(msg: WebviewToHost, panel): look up handler by msg.type, call it, log warning if unknown type. This pattern ensures panel.ts stays thin — each feature registers its own handler. Also create webview-ui/src/types.ts mirroring the HostToWebview types.",
+          "filePaths": [
+            "src/webview/protocol.ts",
+            "src/webview/message-handler.ts",
+            "webview-ui/src/types.ts"
+          ],
+          "commands": [
+            "npm run compile"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Set up MathResearchPanel with handler registry and service dependencies",
+          "description": "Modify src/webview/panel.ts. MathResearchPanel constructor takes a services object (from createServices in services.ts): {llmService, treeManager, contextBuilder, storageService, personaManager, lean4Service, ragOrchestrator, arxivClient, paperManager}. Store as this.services. Create a MessageHandlerRegistry instance. Wire webview.onDidReceiveMessage to call registry.handle(msg, this). Add public helper methods: postToWebview(msg: HostToWebview), getCurrentTree(), getCurrentTreeId(), setCurrentTree(tree). Register handlers for 'requestState' (posts current tree state + personas + providers) and 'stopStream' (cancels active CancellationTokenSource). Update createOrShow() to accept services param.",
+          "filePaths": [
+            "src/webview/panel.ts"
+          ],
+          "commands": [
+            "npm run compile"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-003",
+          "title": "Implement send/stream handler in extension host",
+          "description": "Create src/webview/handlers/send-handler.ts. Export function registerSendHandler(registry: MessageHandlerRegistry). Registers handler for 'send' type: get or create tree from panel.services.treeManager, add user node, build context via panel.services.contextBuilder, create CancellationTokenSource (store on panel for stopStream), call panel.services.llmService.sendMessage. Iterate stream: post 'streamChunk' to webview on each chunk (accumulate full text). On complete: add assistant node to tree with full content and metadata.model, post 'streamEnd', save tree via panel.services.storageService. Handle cancellation: save partial content with metadata.incomplete=true. Import and call registerSendHandler in panel.ts constructor after creating registry.",
+          "filePaths": [
+            "src/webview/handlers/send-handler.ts",
+            "src/webview/panel.ts"
+          ],
+          "commands": [
+            "npm run compile"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-004",
+          "title": "Create custom hooks and implement streaming display in webview",
+          "description": "Create webview-ui/src/hooks/useWebviewMessage.ts: hook that wraps window.addEventListener('message') with typed HostToWebview dispatch. Returns {lastMessage, postMessage(msg: WebviewToHost)}. Uses useEffect for setup/teardown. Create webview-ui/src/hooks/useTreeState.ts: hook that manages tree state from 'treeState' messages. Returns {messages (active path nodes), tree, activePath}. Extracts messages by mapping activePath node IDs to content. Create webview-ui/src/hooks/useStreaming.ts: hook that manages streamingNodeId, streamingText from 'streamChunk'/'streamEnd' messages. Debounces KaTeX re-render at 100ms. Returns {streamingNodeId, streamingText, isStreaming}. Modify webview-ui/src/components/ResearchTab.tsx to use these hooks. Render MessageList with messages from useTreeState + streaming message from useStreaming. MessageInput onSend calls postMessage({type:'send', content}). Show Stop button when isStreaming, clicking posts {type:'stopStream'}. On mount, post {type:'requestState'}.",
+          "filePaths": [
+            "webview-ui/src/hooks/useWebviewMessage.ts",
+            "webview-ui/src/hooks/useTreeState.ts",
+            "webview-ui/src/hooks/useStreaming.ts",
+            "webview-ui/src/components/ResearchTab.tsx"
+          ],
+          "commands": [
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-023",
+      "title": "Webview — Branching: Fork from Any Message",
+      "description": "As a researcher, I want to fork a new branch from any message so that I can explore alternative ideas.",
+      "acceptanceCriteria": [
+        "Hovering over any message bubble reveals a Branch icon button",
+        "Clicking Branch calls postMessage({ type: 'fork', nodeId }) to extension host",
+        "Extension host calls TreeManager.forkFrom(treeId, nodeId), updates activePath",
+        "Webview receives updated tree state, renders the new branch as the active conversation",
+        "The previous continuation from that fork point appears as a dimmed/collapsed card",
+        "Fork point message itself remains fully visible and undimmed",
+        "Verify in browser (webview): fork creates new input area, old branch dims",
+        "Typecheck/lint passes"
+      ],
+      "priority": 9,
+      "status": "pending",
+      "dependsOn": [
+        "US-022"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Add fork button to MessageBubble",
+          "description": "Modify webview-ui/src/components/MessageBubble.tsx. Add props: nodeId, childCount, onFork(nodeId). On hover (CSS :hover on .message-bubble), show a small 'Branch' icon button (use SVG fork icon or unicode branch symbol). onClick calls onFork(nodeId). Button positioned absolute top-right of bubble, visible only on hover.",
+          "filePaths": [
+            "webview-ui/src/components/MessageBubble.tsx"
+          ],
+          "commands": [
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Create BranchCard component for dimmed siblings",
+          "description": "Create webview-ui/src/components/BranchCard.tsx. Props: {nodeId, previewText (first line of content), childCount, isActive, onClick}. Render a compact card: preview text truncated to 50 chars, badge showing childCount if > 0. When isActive is false: opacity 0.4, reduced font size, max-height collapsed with CSS transition. onClick calls switchBranch handler. Style: border-left 3px solid var(--vscode-textLink-foreground) for active, var(--vscode-panel-border) for inactive.",
+          "filePaths": [
+            "webview-ui/src/components/BranchCard.tsx"
+          ],
+          "commands": [
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-003",
+          "title": "Handle fork in extension host and render branches",
+          "description": "Create src/webview/handlers/branch-handler.ts. Export function registerBranchHandlers(registry). Register handler for 'fork': call panel.services.treeManager.forkFrom(treeId, msg.nodeId), save tree, post updated treeState. Import and call registerBranchHandlers in panel.ts constructor. In webview ResearchTab.tsx: when rendering messages from active path, at each node that has multiple children, render BranchCard components for non-active siblings. The active child's messages continue in the main flow. Non-active siblings appear as dimmed BranchCards. Clicking a BranchCard posts {type:'switchBranch', nodeId} to extension host.",
+          "filePaths": [
+            "src/webview/handlers/branch-handler.ts",
+            "src/webview/panel.ts",
+            "webview-ui/src/components/ResearchTab.tsx"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-024",
+      "title": "Webview — Branching: Switch Branch and Breadcrumb",
+      "description": "As a researcher, I want to switch between branches and see my current position in the tree.",
+      "acceptanceCriteria": [
+        "A breadcrumb bar at the top of the Research tab shows the current path",
+        "Clicking any breadcrumb segment navigates to that node",
+        "Clicking a dimmed sibling branch card switches to that branch",
+        "When a node has more than 5 sibling branches, siblings beyond 5 are collapsed into +N more expander",
+        "Branch switching preserves scroll position of the target branch",
+        "Verify in browser (webview): breadcrumb reflects active path, clicking switches branches",
+        "Typecheck/lint passes"
+      ],
+      "priority": 10,
+      "status": "pending",
+      "dependsOn": [
+        "US-023"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Create Breadcrumb component",
+          "description": "Create webview-ui/src/components/Breadcrumb.tsx. Props: {path: Array<{nodeId, label}>, onNavigate(nodeId)}. Render horizontal bar with segments separated by '>'. Each label is first 30 chars of node content. Clicking a segment calls onNavigate(nodeId). Style: font-size 12px, color var(--vscode-breadcrumb-foreground), separator color var(--vscode-breadcrumb-foreground) at 50% opacity. Overflow: horizontal scroll with hidden scrollbar.",
+          "filePaths": [
+            "webview-ui/src/components/Breadcrumb.tsx"
+          ],
+          "commands": [
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Implement branch switching and +N more expander",
+          "description": "In src/webview/handlers/branch-handler.ts: add 'switchBranch' handler — call panel.services.treeManager.switchBranch(treeId, nodeId), save tree, post updated treeState. In ResearchTab.tsx: add Breadcrumb at top, build path labels from activePath nodes via useTreeState hook. Wire BranchCard onClick to post switchBranch. When a node has > 5 siblings, show first 5 BranchCards + a '+N more' button that expands to show the rest (local useState toggle). Store scroll positions per branch in a Map<string, number> (useRef), restore on switch.",
+          "filePaths": [
+            "src/webview/handlers/branch-handler.ts",
+            "webview-ui/src/components/ResearchTab.tsx"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-025",
+      "title": "Webview — Branching: Delete Branch",
+      "description": "As a user, I want to delete a branch I no longer need.",
+      "acceptanceCriteria": [
+        "Right-clicking a message or branch card shows a context menu with Delete branch",
+        "If the node has children, a confirmation dialog shows: This branch has N sub-branches. Delete all?",
+        "On confirm, postMessage({ type: 'deleteBranch', nodeId }) is sent to extension host",
+        "Extension host calls TreeManager.deleteBranch, removes the node and all descendants",
+        "If the deleted branch was the active path, activePath switches to nearest sibling or parent",
+        "Tree is auto-saved after deletion",
+        "Verify in browser (webview): branch and children disappear, active path updates",
+        "Typecheck/lint passes"
+      ],
+      "priority": 10,
+      "status": "pending",
+      "dependsOn": [
+        "US-023"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Add context menu and delete handling",
+          "description": "In MessageBubble.tsx and BranchCard.tsx: add onContextMenu handler that shows a simple custom context menu div (positioned at click coords) with 'Delete branch' option. On click: count descendants (pass childCount prop), if > 0 show window.confirm('This branch has N sub-branches. Delete all?'). On confirm: post {type:'deleteBranch', nodeId} to extension host. In src/webview/handlers/branch-handler.ts: add 'deleteBranch' handler — call panel.services.treeManager.deleteBranch(treeId, nodeId), save tree, post updated treeState. TreeManager.deleteBranch already handles activePath switch (US-008).",
+          "filePaths": [
+            "webview-ui/src/components/MessageBubble.tsx",
+            "webview-ui/src/components/BranchCard.tsx",
+            "src/webview/handlers/branch-handler.ts"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-026",
+      "title": "Webview — Persona Selector",
+      "description": "As a mathematician, I want to select a math persona from the Research tab header so that the LLM adapts its proof style.",
+      "acceptanceCriteria": [
+        "A dropdown in the Research tab header lists all available personas",
+        "Selecting a persona sends postMessage({ type: 'setPersona', personaId }) to extension host",
+        "Subsequent LLM calls use the selected persona's system prompt",
+        "The currently selected persona is displayed in the dropdown",
+        "A Multi-agent option appears at the bottom of the dropdown list",
+        "Selected persona is stored per-tree",
+        "Verify in browser (webview): dropdown shows personas, selection persists",
+        "Typecheck/lint passes"
+      ],
+      "priority": 8,
+      "status": "pending",
+      "dependsOn": [
+        "US-021",
+        "US-012"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Create PersonaSelector component and wire to extension host",
+          "description": "Create webview-ui/src/components/PersonaSelector.tsx. Props: {personas: Array<{id, label}>, selectedId, onSelect(id)}. Render a <select> dropdown styled with VS Code theme variables. Options: one per persona + 'Multi-agent' at bottom. On change, call onSelect with selected value. In ResearchTab header area, render PersonaSelector. On select, post {type:'setPersona', personaId} to extension host. Create src/webview/handlers/persona-handler.ts: register 'setPersona' handler — store personaId on tree object (add activePersona field to DialogueTree), save tree, post updated treeState. Import and call registerPersonaHandlers in panel.ts constructor. On 'requestState' handler (already in panel.ts), include personas list from personaManager.listPersonas() via a 'personas' message. Update ContextBuilder calls to use the tree's activePersona.",
+          "filePaths": [
+            "webview-ui/src/components/PersonaSelector.tsx",
+            "webview-ui/src/components/ResearchTab.tsx",
+            "src/webview/handlers/persona-handler.ts",
+            "src/webview/panel.ts"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-027",
+      "title": "Multi-Agent Mode with Orchestration",
+      "description": "As a researcher, I want multi-agent mode to send my question to multiple personas in parallel and get a synthesized answer.",
+      "acceptanceCriteria": [
+        "When persona is set to multi-agent, user prompt is sent to 3 personas in parallel",
+        "Each persona call uses its own system prompt and runs as an independent LLM request",
+        "All 3 responses are displayed as labeled side-by-side cards",
+        "After individual responses complete, an orchestration call synthesizes all responses",
+        "The synthesized response appears below the cards as the primary assistant message",
+        "Each card has a Promote to branch button that creates a new branch",
+        "Multi-agent responses render LaTeX correctly in all cards and the synthesis",
+        "Verify in browser (webview): 3 cards appear, synthesis appears below, Promote creates branch",
+        "Typecheck/lint passes"
+      ],
+      "priority": 9,
+      "status": "pending",
+      "dependsOn": [
+        "US-026",
+        "US-002"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Implement multi-agent orchestration in extension host",
+          "description": "Create src/chat/multi-agent.ts. Export async function runMultiAgent(prompt, personaIds: string[], personaManager, contextBuilder, llmService, tree, nodeId): for each personaId, build context with that persona's system prompt. Use Promise.allSettled to run all LLM calls in parallel. Collect results: {personaId, label, response}[]. Then build an orchestration prompt: 'Here are perspectives from multiple mathematical experts:\\n\\n[Algebraist]: {response1}\\n\\n[Analyst]: {response2}\\n...\\n\\nSynthesize these perspectives into a comprehensive answer.' Send to LLM, collect synthesis. Return {individualResponses, synthesis}. Read configurable persona list from mathAgent.multiAgent.personas setting (default: ['algebraist','analyst','geometer']). Add setting to package.json.",
+          "filePaths": [
+            "src/chat/multi-agent.ts",
+            "package.json"
+          ],
+          "commands": [
+            "npm run compile"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Create MultiAgentCards component and integrate",
+          "description": "Create webview-ui/src/components/MultiAgentCards.tsx. Props: {responses: Array<{personaId, label, content}>, synthesis: string, onPromoteToBranch(personaId, content)}. Render: CSS grid with equal-width columns for each response card. Each card has header label, rendered content (KaTeX), and 'Promote to branch' button. Below cards, render synthesis with KaTeX. In src/webview/handlers/send-handler.ts: modify 'send' handler — if tree's activePersona is 'multi-agent', call runMultiAgent instead of single LLM call. Post results as {type:'multiAgentResult', responses, synthesis}. In ResearchTab: add useMultiAgent hook (webview-ui/src/hooks/useMultiAgent.ts) to handle multiAgentResult messages. Render MultiAgentCards when multi-agent response is active. Promote button posts {type:'fork', nodeId} then posts the promoted content as a new message on the branch.",
+          "filePaths": [
+            "webview-ui/src/components/MultiAgentCards.tsx",
+            "src/webview/handlers/send-handler.ts",
+            "webview-ui/src/hooks/useMultiAgent.ts",
+            "webview-ui/src/components/ResearchTab.tsx"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-028",
+      "title": "Webview — RAG Indicator and Source Cards",
+      "description": "As a user, I want to see when RAG auto-retrieval fires and what sources were fetched.",
+      "acceptanceCriteria": [
+        "When RAG enrichment runs for a message, a pill/badge appears below the message listing sources that returned results",
+        "Failed sources show as struck-through text in the pill",
+        "Clicking the pill expands a list of citation cards with title, source, snippet, URL",
+        "Each citation card has a Dismiss button",
+        "RAG toggle switch in the Research tab header enables/disables auto-retrieval",
+        "Verify in browser (webview): pill appears after message, expands to show citations, dismiss works",
+        "Typecheck/lint passes"
+      ],
+      "priority": 9,
+      "status": "pending",
+      "dependsOn": [
+        "US-022",
+        "US-016"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Integrate RAG into message send flow",
+          "description": "In src/webview/handlers/send-handler.ts: modify 'send' handler — after user submits message, if rag enabled (check mathAgent.rag.enabled setting), call panel.services.ragOrchestrator.enrich(message.content). Pass resulting citations to contextBuilder.build() as ragCitations option. After stream completes, post {type:'ragStatus', nodeId, status: ragStatus} to webview. Store citations in the assistant node's metadata.sources. Also store ragStatus on the node for persistence.",
+          "filePaths": [
+            "src/webview/handlers/send-handler.ts"
+          ],
+          "commands": [
+            "npm run compile"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Create RagIndicator and SourceCard components",
+          "description": "Create webview-ui/src/components/RagIndicator.tsx. Props: {ragStatus, onDismissCitation(url)}. Render: a pill/badge below message with text 'Sources: arXiv, Wikipedia, nLab' — show source names that returned results, strike-through for failed. Clickable: toggles expanded state. When expanded, render list of SourceCard components. Create webview-ui/src/components/SourceCard.tsx. Props: {citation: {title,source,snippet,url}, onDismiss}. Render: title, source icon/badge, snippet (100 chars), clickable URL (opens in browser via postMessage), Dismiss button. Create webview-ui/src/components/RagToggle.tsx: simple toggle switch in header, posts setting change to extension. Integrate all into ResearchTab: render RagIndicator below assistant messages that have ragStatus, render RagToggle in header.",
+          "filePaths": [
+            "webview-ui/src/components/RagIndicator.tsx",
+            "webview-ui/src/components/SourceCard.tsx",
+            "webview-ui/src/components/RagToggle.tsx",
+            "webview-ui/src/components/ResearchTab.tsx"
+          ],
+          "commands": [
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-029",
+      "title": "Attached Papers — Add and Manage",
+      "description": "As a researcher, I want to attach specific papers to my research session so that the LLM has that context when reasoning.",
+      "acceptanceCriteria": [
+        "Add paper button opens a QuickPick with options: From file (PDF/TeX) and From arXiv ID",
+        "From file opens a file picker for .pdf and .tex files; text is extracted",
+        "From arXiv ID fetches paper via arXiv API",
+        "Attached papers appear in a collapsible sidebar section in the Research tab",
+        "Right-click context menu: Set scope Global, Set scope This branch only, Remove",
+        "Papers with global scope are injected into context for all branches",
+        "Attached papers are persisted in the tree JSON",
+        "When PDF text extraction fails, show error",
+        "Verify in browser (webview): papers appear in sidebar, scope toggle works, remove works",
+        "Typecheck/lint passes"
+      ],
+      "priority": 9,
+      "status": "pending",
+      "dependsOn": [
+        "US-022",
+        "US-010"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Implement paper attachment logic in extension host",
+          "description": "Create src/papers/manager.ts. Install pdf-parse as dependency. Class PaperManager. Methods: attachFromFile(filePath): read file, if .tex read raw text, if .pdf use pdf-parse to extract text (wrap in try-catch, throw PaperExtractionError on failure). Return AttachedPaper object. attachFromArxiv(arxivId, arxivClient): fetch paper via arxivClient, get abstract as extractedText. Return AttachedPaper. Create src/webview/handlers/paper-handler.ts: register 'addPaper' handler — show vscode.window.showQuickPick(['From file (PDF/TeX)', 'From arXiv ID']). If file: show openDialog with pdf/tex filters. If arXiv: show inputBox. Call panel.services.paperManager, add result to tree.attachedPapers, save tree, post updated treeState. Import and call registerPaperHandlers in panel.ts constructor.",
+          "filePaths": [
+            "src/papers/manager.ts",
+            "src/webview/handlers/paper-handler.ts",
+            "src/webview/panel.ts"
+          ],
+          "commands": [
+            "npm install pdf-parse",
+            "npm run compile"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Create AttachedPapers sidebar component",
+          "description": "Create webview-ui/src/components/AttachedPapers.tsx. Props: {papers: AttachedPaper[], onAdd(), onRemove(id), onSetScope(id, scope)}. Render: collapsible section with header 'Attached Papers' + 'Add' button. List each paper: title, source badge (arXiv/PDF/TeX), scope badge (Global/Branch). Click to expand and show first 200 chars of extractedText. Right-click context menu: 'Set scope: Global', 'Set scope: This branch only', 'Remove'. onAdd posts {type:'addPaper'} to extension. onRemove/onSetScope post respective messages. Place in ResearchTab as a side panel or collapsible section above the message list.",
+          "filePaths": [
+            "webview-ui/src/components/AttachedPapers.tsx",
+            "webview-ui/src/components/ResearchTab.tsx"
+          ],
+          "commands": [
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-030",
+      "title": "Lean4 Service — Verification Integration",
+      "description": "As a researcher, I want to optionally verify proof steps in Lean4 so that I can check correctness formally.",
+      "acceptanceCriteria": [
+        "Lean4Service.isAvailable() checks if lean binary is on PATH, returns boolean",
+        "Lean4Service.verify(leanCode) writes code to a temp .lean file, runs lean CLI, captures stdout/stderr, returns Lean4Result object",
+        "Lean4Result contains: status, leanCode, diagnostics, verifiedAt",
+        "Timeout is 60 seconds by default, configurable via mathAgent.lean4.timeoutMs",
+        "Lean4 toggle is controlled by mathAgent.lean4.enabled setting (default: false)",
+        "When Lean4 is not installed, isAvailable() returns false; no errors thrown",
+        "Unit tests cover: availability check, successful verification, error capture, timeout",
+        "Typecheck/lint passes"
+      ],
+      "priority": 2,
+      "status": "pending",
+      "dependsOn": [
+        "US-001"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Define Lean4 types and write tests",
+          "description": "Update src/lean4/types.ts. Define Lean4Result: {status: 'success'|'error'|'timeout', leanCode: string, diagnostics: string[], verifiedAt: number}. Create src/test/lean4/service.test.ts. Mock child_process.execFile. Tests: (1) isAvailable returns true when 'lean --version' succeeds, false when it fails, (2) verify writes code to temp file and runs lean, returns {status:'success'} when exit code 0, (3) verify returns {status:'error', diagnostics:[stderr]} when exit code non-0, (4) verify returns {status:'timeout'} when process exceeds timeout, (5) verify includes leanCode and verifiedAt in result. Add mathAgent.lean4.enabled (boolean, default false) and mathAgent.lean4.timeoutMs (number, default 60000) to package.json.",
+          "filePaths": [
+            "src/lean4/types.ts",
+            "src/test/lean4/service.test.ts",
+            "package.json"
+          ],
+          "commands": [
+            "npm run test:unit -- --grep 'Lean4Service'"
+          ],
+          "testFirst": true,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Implement Lean4Service",
+          "description": "Create src/lean4/service.ts. Class Lean4Service. isAvailable(): try execFile('lean', ['--version']) with 5s timeout, return true on success, false on error. verify(leanCode: string): get timeout from config mathAgent.lean4.timeoutMs. Write leanCode to os.tmpdir()/math-agent-verify-{uuid}.lean. Run execFile('lean', [filePath]) with timeout. On success (exit 0): return {status:'success', leanCode, diagnostics:[], verifiedAt:Date.now()}. On non-zero exit: parse stderr into diagnostics array (split by newline), return {status:'error',...}. On timeout: kill process, return {status:'timeout',...}. Clean up temp file in finally block. Pass all tests.",
+          "filePaths": [
+            "src/lean4/service.ts"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run test:unit -- --grep 'Lean4Service'"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-031",
+      "title": "Lean4 — Proof Step Verification UI",
+      "description": "As a researcher, I want a Verify in Lean4 button on proof steps so that I can check formal correctness inline.",
+      "acceptanceCriteria": [
+        "When Lean4 enabled AND available, assistant messages show a Verify in Lean4 button",
+        "Clicking sends content to LLM for translation to Lean4 code",
+        "Generated Lean4 code is passed to Lean4Service.verify()",
+        "Result appears inline: green Verified, red Failed with diagnostics, yellow Timeout",
+        "On failure, Fix and retry button sends code + diagnostics back to LLM (up to 3 attempts)",
+        "Lean4Result is stored in node metadata",
+        "When Lean4 not enabled or not installed, button does not appear",
+        "Verify in browser (webview): button appears, badges show correctly, retry works",
+        "Typecheck/lint passes"
+      ],
+      "priority": 9,
+      "status": "pending",
+      "dependsOn": [
+        "US-022",
+        "US-030",
+        "US-002"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Create Lean4Badge component",
+          "description": "Create webview-ui/src/components/Lean4Badge.tsx. Props: {lean4Result?: Lean4Result, lean4Available: boolean, onVerify(), onRetry()}. If !lean4Available, render nothing. If no result: render 'Verify in Lean4' button. If result.status==='success': green badge 'Verified'. If 'error': red badge 'Failed' + expandable diagnostics list + 'Fix and retry' button (calls onRetry). If 'timeout': yellow badge 'Timeout' + retry button. Style badges with appropriate colors.",
+          "filePaths": [
+            "webview-ui/src/components/Lean4Badge.tsx"
+          ],
+          "commands": [
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Implement verify and retry flow in extension host",
+          "description": "Create src/webview/handlers/lean4-handler.ts. Register 'verifyLean4' handler: get node content from tree, send to LLM with prompt 'Translate this mathematical statement/proof into Lean4 code. Return only the Lean4 code block.', get lean4 code from response, call panel.services.lean4Service.verify(code), store result in node.metadata.lean4Result, save tree, post {type:'lean4Result', nodeId, result}. Register 'retryLean4' handler {nodeId, attempt}: get previous result, send to LLM with 'The following Lean4 code failed:\\n{code}\\nErrors:\\n{diagnostics}\\nFix the code.' Re-verify. Max 3 attempts (check attempt < 3). Import and call registerLean4Handlers in panel.ts constructor. In ResearchTab: render Lean4Badge on assistant messages, pass handlers that post verifyLean4/retryLean4. Only show badge if lean4Available flag is true (sent from extension host on requestState based on lean4Service.isAvailable() && setting enabled).",
+          "filePaths": [
+            "src/webview/handlers/lean4-handler.ts",
+            "src/webview/panel.ts",
+            "webview-ui/src/components/ResearchTab.tsx"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-032",
+      "title": "Write Tab — AI Paper Writing Assistant",
+      "description": "As a researcher, I want the Write tab to help me draft paper sections from my research and inject them into my .tex files.",
+      "acceptanceCriteria": [
+        "Write tab displays: a file selector listing .tex files, a section view of the .tex file structure, and a chat input",
+        "Draft from branch action sends full branch context to LLM to draft LaTeX",
+        "LLM response is displayed as a LaTeX preview rendered via KaTeX",
+        "Insert into file button lets user choose which .tex file and section to inject content",
+        "Content is injected into the .tex file using VS Code WorkspaceEdit API",
+        "AI chat has document context — LLM sees the full .tex file content",
+        "Citations are auto-formatted as cite references; BibTeX entries appended to .bib file",
+        "Verify in browser (webview): file selector works, section structure displays, draft inserts into file",
+        "Typecheck/lint passes"
+      ],
+      "priority": 9,
+      "status": "pending",
+      "dependsOn": [
+        "US-020",
+        "US-008",
+        "US-002",
+        "US-010"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Implement .tex file scanning and section parsing",
+          "description": "Create src/papers/tex-parser.ts. Export function scanTexFiles(workspaceRoot): use vscode.workspace.findFiles('**/*.tex') to find all .tex files. Return array of {path, name}. Export function parseTexStructure(content: string): parse \\section{} and \\subsection{} headings with their line numbers. Return array of {level: 'section'|'subsection', title: string, lineNumber: number}. Also scan for \\bibliography or \\addbibresource to find .bib file path.",
+          "filePaths": [
+            "src/papers/tex-parser.ts"
+          ],
+          "commands": [
+            "npm run compile"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Build Write tab UI components",
+          "description": "Modify webview-ui/src/components/WriteTab.tsx. Add state: selectedFile, texStructure, draftContent, chatMessages. Render: (1) File selector dropdown at top (list of .tex files from extension host). (2) Section outline showing parsed headings as a clickable list. (3) Draft preview area with KaTeX-rendered content (using renderMathMarkdown). (4) Chat input at bottom for AI writing commands. (5) 'Insert into file' button that shows QuickPick-like selector for target file and section. On mount, post {type:'getTexFiles'} to extension host. Handle responses to populate file list and structure.",
+          "filePaths": [
+            "webview-ui/src/components/WriteTab.tsx"
+          ],
+          "commands": [
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-003",
+          "title": "Implement draft-from-branch handler in extension host",
+          "description": "Create src/webview/handlers/write-handler.ts. Register 'getTexFiles' handler: call scanTexFiles, post {type:'texFiles', files} to webview. Register 'selectTexFile' handler: read file content, call parseTexStructure, post {type:'texStructure', structure}. Register 'draftFromBranch' handler {branchNodeId}: build context from branch via panel.services.contextBuilder, send to LLM with prompt 'Draft a LaTeX section based on this research discussion. Include theorem/proof environments and \\cite{} references for any cited sources. Output only the LaTeX content.' Post result as {type:'draftResult', latex}. Import and call registerWriteHandlers in panel.ts constructor. Add 'Draft as paper section' to BranchCard context menu — clicking posts {type:'draftFromBranch', branchNodeId} and switches to Write tab.",
+          "filePaths": [
+            "src/webview/handlers/write-handler.ts",
+            "src/webview/panel.ts",
+            "webview-ui/src/components/BranchCard.tsx"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-004",
+          "title": "Implement file injection and BibTeX append",
+          "description": "In src/webview/handlers/write-handler.ts: register 'insertIntoFile' handler {filePath, afterLine, content}: use vscode.workspace.applyEdit with WorkspaceEdit that creates a TextEdit inserting content at the specified line number in the target file. After insertion, if the current tree has arXiv citations in metadata.sources of the source branch, find .bib file in workspace (use tex-parser's bibliography scanning), read existing BibTeX entries, append only new entries (deduplicate by citation key). Show info notification 'Content inserted into {filename} at line {line}. {N} new BibTeX entries added.' Register handler for 'writeChat' {message}: read current .tex file content, build LLM context with full document + user message, stream response as draft, post {type:'draftResult', latex}.",
+          "filePaths": [
+            "src/webview/handlers/write-handler.ts"
+          ],
+          "commands": [
+            "npm run compile"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-033",
+      "title": "Webview — Model Selector",
+      "description": "As a user, I want to switch LLM provider/model from the Research Panel without going to settings.",
+      "acceptanceCriteria": [
+        "A model selector dropdown in the Research Panel header shows current provider and model name",
+        "Dropdown lists all configured providers (only those with valid API keys or VS Code LM available)",
+        "Selecting a different provider/model sends postMessage({ type: 'setModel', provider, model })",
+        "Extension host updates the active provider in LlmService; subsequent calls use the new provider",
+        "The switch is session-scoped (does not change persisted setting)",
+        "Each node's metadata.model records which model generated it",
+        "Verify in browser (webview): dropdown shows configured providers, switching works",
+        "Typecheck/lint passes"
+      ],
+      "priority": 8,
+      "status": "pending",
+      "dependsOn": [
+        "US-021",
+        "US-002"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Create ModelSelector component and wire to extension host",
+          "description": "Create webview-ui/src/components/ModelSelector.tsx. Props: {providers: Array<{id, model, label}>, selectedProviderId, onSelect(providerId)}. Render <select> dropdown showing 'Provider / model' for each entry. On change, post {type:'setModel', provider: selected.id, model: selected.model} to extension host. Create src/webview/handlers/model-handler.ts: register 'setModel' handler — call panel.services.llmService.setProvider(provider). Import and call registerModelHandlers in panel.ts constructor. In the existing 'requestState' handler, check each provider for valid API keys (try getApiKey, check if non-empty), post 'providers' message with only configured ones. Add ModelSelector to ResearchTab header between PersonaSelector and RagToggle.",
+          "filePaths": [
+            "webview-ui/src/components/ModelSelector.tsx",
+            "src/webview/handlers/model-handler.ts",
+            "src/webview/panel.ts",
+            "webview-ui/src/components/ResearchTab.tsx"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    },
+    {
+      "id": "US-034",
+      "title": "Tree List and Session Management",
+      "description": "As a user, I want to create, open, and manage multiple research sessions (trees).",
+      "acceptanceCriteria": [
+        "Research tab header has a Trees dropdown listing all saved trees sorted by updatedAt descending",
+        "Selecting a tree loads it into the Research tab",
+        "New tree option prompts for a title, creates a new tree, and activates it",
+        "Rename context menu option allows changing the title",
+        "Delete context menu option shows confirmation then deletes the tree file",
+        "Current tree title is displayed in the panel header",
+        "Verify in browser (webview): tree list shows all sessions, create/switch/rename/delete work",
+        "Typecheck/lint passes"
+      ],
+      "priority": 8,
+      "status": "pending",
+      "dependsOn": [
+        "US-021",
+        "US-009"
+      ],
+      "tasks": [
+        {
+          "id": "T-001",
+          "title": "Create TreeSelector component",
+          "description": "Create webview-ui/src/components/TreeSelector.tsx. Props: {trees: Array<{id, title, updatedAt}>, activeTreeId, onSelect(id), onCreate(title), onRename(id, title), onDelete(id)}. Render: dropdown/menu with tree list sorted by updatedAt desc. Each entry shows title + relative time. 'New research session' option at top. Right-click on entries shows 'Rename' (prompt for new title) and 'Delete' (confirm dialog). Active tree shown as selected. Display current tree title in panel header area.",
+          "filePaths": [
+            "webview-ui/src/components/TreeSelector.tsx"
+          ],
+          "commands": [
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        },
+        {
+          "id": "T-002",
+          "title": "Wire tree management to extension host",
+          "description": "Create src/webview/handlers/tree-handler.ts. Register 'listTrees' handler: call panel.services.storageService.listTrees(), post {type:'treeList', trees}. Register 'selectTree' handler {treeId}: load tree from storage, set as active on panel, post treeState. Register 'createTree' handler {title}: call panel.services.treeManager.createTree(title), save via storageService, set as active, post treeState. Register 'renameTree' handler: load tree, update title, save. Register 'deleteTree' handler: delete file from .math-agent/trees/, post updated tree list. Import and call registerTreeHandlers in panel.ts constructor. Add TreeSelector to ResearchTab header. On mount, post {type:'listTrees'} to populate.",
+          "filePaths": [
+            "src/webview/handlers/tree-handler.ts",
+            "src/webview/panel.ts",
+            "webview-ui/src/components/ResearchTab.tsx"
+          ],
+          "commands": [
+            "npm run compile",
+            "npm run build:webview"
+          ],
+          "testFirst": false,
+          "status": "pending"
+        }
+      ],
+      "review": {
+        "specCompliance": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        },
+        "codeQuality": {
+          "status": "pending",
+          "issues": [],
+          "reviewedAt": null
+        }
+      },
+      "retries": {
+        "attempts": 0,
+        "maxAttempts": 3,
+        "failureLog": []
+      },
+      "notes": ""
+    }
+  ],
+  "progress": [
+    {
+      "timestamp": "2026-03-06T18:58:13.149Z",
+      "iteration": "1",
+      "storyId": "US-001",
+      "action": "story_passed",
+      "details": "Scaffolded VS Code extension with package.json, tsconfig, eslint flat config, extension.ts, services.ts, and directory structure",
+      "filesChanged": [
+        "package.json",
+        "tsconfig.json",
+        "eslint.config.mjs",
+        ".vscodeignore",
+        "src/extension.ts",
+        "src/services.ts"
+      ],
+      "learnings": "ESLint v9 requires flat config (eslint.config.mjs), not .eslintrc.json"
+    },
+    {
+      "timestamp": "2026-03-06T19:15:00Z",
+      "iteration": 2,
+      "storyId": "US-020",
+      "action": "task_completed",
+      "details": "Implemented webview panel shell with React build pipeline (esbuild), tab navigation (Research/Write), MathResearchPanel provider with CSP, and wired openPanel command",
+      "filesChanged": [
+        "package.json",
+        "esbuild.webview.js",
+        "webview-ui/tsconfig.json",
+        "webview-ui/src/index.tsx",
+        "webview-ui/src/App.tsx",
+        "webview-ui/src/App.css",
+        "webview-ui/src/components/ResearchTab.tsx",
+        "webview-ui/src/components/WriteTab.tsx",
+        "src/webview/panel.ts",
+        "src/extension.ts"
+      ],
+      "learnings": "esbuild bundles React webview-ui with IIFE format for VS Code webviews. CSP requires nonce for scripts, unsafe-inline for styles with webview.cspSource. webview-ui is excluded from main tsconfig.json and has its own tsconfig targeting ES2020 with jsx react-jsx."
+    },
+    {
+      "timestamp": "2026-03-06T19:30:30.962Z",
+      "iteration": "2",
+      "storyId": "US-020",
+      "action": "story_passed",
+      "details": "Webview panel with React build pipeline (esbuild), App with tab navigation (Research/Write), MathResearchPanel class with CSP and nonce",
+      "filesChanged": [
+        "package.json",
+        "esbuild.webview.js",
+        "webview-ui/tsconfig.json",
+        "webview-ui/src/index.tsx",
+        "webview-ui/src/App.tsx",
+        "webview-ui/src/App.css",
+        "webview-ui/src/components/ResearchTab.tsx",
+        "webview-ui/src/components/WriteTab.tsx",
+        "src/webview/panel.ts",
+        "src/extension.ts"
+      ],
+      "learnings": "esbuild IIFE format works well for VS Code webviews. Nonce-based CSP for security."
+    },
+    {
+      "timestamp": "2026-03-06T20:00:00Z",
+      "iteration": 3,
+      "storyId": "US-012",
+      "action": "task_completed",
+      "details": "PersonaManager with 7 built-in personas (algebraist, analyst, geometer, topologist, number-theorist, logician, multi-agent), custom persona support via settings, dependency-injected config getter for testability",
+      "filesChanged": [
+        "src/persona/types.ts",
+        "src/persona/manager.ts",
+        "src/services.ts",
+        "src/test/persona/manager.test.ts",
+        "src/test/__mocks__/vscode.ts",
+        "package.json",
+        "tsconfig.test.json"
+      ],
+      "learnings": "Node 24 with tsx works well for mocha test runner. Dependency injection via ConfigGetter avoids need to mock vscode module. cross-env needed for Windows npm scripts with env vars."
+    }
+  ],
+  "codebasePatterns": [
+    "Webview React apps live in webview-ui/ with their own tsconfig.json (ES2020, jsx react-jsx, module ESNext)",
+    "esbuild.webview.js bundles webview-ui/src/index.tsx to out/webview/bundle.js in IIFE format",
+    "MathResearchPanel in src/webview/panel.ts uses singleton pattern with static createOrShow()",
+    "Webview HTML uses nonce-based CSP for scripts, unsafe-inline for styles, webview.cspSource for all resource origins",
+    "VS Code CSS variables (--vscode-editor-background, --vscode-editor-foreground, --vscode-button-background) for theme integration",
+    "Use dependency injection (ConfigGetter function) instead of importing vscode directly in service classes -- enables unit testing with mocha+tsx without vscode module mocking",
+    "Unit tests use mocha with tsx loader: mocha --require tsx src/test/**/*.test.ts",
+    "Services are wired in src/services.ts via createServices() which is called from extension.ts activate()"
+  ]
+}

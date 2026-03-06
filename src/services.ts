@@ -1,11 +1,18 @@
 import * as vscode from 'vscode'
+import { PersonaManager } from './persona/manager'
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface Services {
-  // Each story will add its service here
+  readonly personaManager: PersonaManager
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function createServices(_context: vscode.ExtensionContext): Services {
-  return {}
+  const config = vscode.workspace.getConfiguration('mathAgent')
+  const personaManager = new PersonaManager(
+    <T>(key: string, defaultValue?: T): T | undefined => config.get<T>(key, defaultValue as T)
+  )
+
+  return {
+    personaManager,
+  }
 }

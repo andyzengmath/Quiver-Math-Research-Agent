@@ -21,24 +21,72 @@
         "command": "mathAgent.openPanel",
         "title": "Open Math Research Studio"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Math Research Agent",
+      "properties": {
+        "mathAgent.defaultPersona": {
+          "type": "string",
+          "default": "algebraist",
+          "description": "The default math persona to use for LLM interactions"
+        },
+        "mathAgent.customPersonas": {
+          "type": "array",
+          "default": [],
+          "description": "Custom persona configurations as an array of PersonaConfig objects",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique identifier for the persona"
+              },
+              "label": {
+                "type": "string",
+                "description": "Display label for the persona"
+              },
+              "systemPrompt": {
+                "type": "string",
+                "description": "System prompt for the LLM (minimum 100 characters)"
+              },
+              "preferredSources": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": ["arxiv", "nlab", "wikipedia"]
+                },
+                "description": "Preferred knowledge sources for this persona"
+              }
+            },
+            "required": ["id", "label", "systemPrompt"]
+          }
+        }
+      }
+    }
   },
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "lint": "eslint src --ext ts",
-    "build:webview": "node esbuild.webview.js"
+    "build:webview": "node esbuild.webview.js",
+    "test:unit": "mocha --require tsx src/test/**/*.test.ts"
   },
   "devDependencies": {
+    "@types/mocha": "^10.0.10",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/vscode": "^1.100.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
+    "cross-env": "^10.1.0",
     "esbuild": "^0.27.3",
     "eslint": "^9.0.0",
+    "mocha": "^11.7.5",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.0"
   }
 }
