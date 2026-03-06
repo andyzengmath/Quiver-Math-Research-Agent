@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 import { createServices } from './services'
+import { MathResearchPanel } from './webview/panel'
 
 export function activate(context: vscode.ExtensionContext): void {
   const services = createServices(context)
@@ -7,7 +8,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const openPanelCommand = vscode.commands.registerCommand(
     'mathAgent.openPanel',
     () => {
-      vscode.window.showInformationMessage('Math Research Studio (placeholder)')
+      MathResearchPanel.createOrShow(context)
     }
   )
 
