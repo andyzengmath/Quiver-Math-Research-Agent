@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useCallback } from 'react'
 import { MessageBubble } from './MessageBubble'
 import { RagIndicator } from './RagIndicator'
-import type { RagStatus } from '../types'
+import { Lean4Badge } from './Lean4Badge'
+import type { RagStatus, Lean4Result } from '../types'
 
 export interface Message {
   readonly id: string
@@ -16,6 +17,10 @@ export interface MessageListProps {
   readonly ragStatusByNode?: ReadonlyMap<string, RagStatus>
   readonly onDismissCitation?: (nodeId: string, url: string) => void
   readonly onOpenUrl?: (url: string) => void
+  readonly lean4Available?: boolean
+  readonly lean4ResultsByNode?: ReadonlyMap<string, Lean4Result>
+  readonly onVerifyLean4?: (nodeId: string) => void
+  readonly onRetryLean4?: (nodeId: string) => void
 }
 
 export function MessageList({
@@ -24,6 +29,10 @@ export function MessageList({
   ragStatusByNode,
   onDismissCitation,
   onOpenUrl,
+  lean4Available,
+  lean4ResultsByNode,
+  onVerifyLean4,
+  onRetryLean4,
 }: MessageListProps): React.ReactElement {
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -65,6 +74,14 @@ export function MessageList({
                 ragStatus={ragStatus}
                 onDismissCitation={(url) => handleDismissCitation(msg.id, url)}
                 onOpenUrl={handleOpenUrl}
+              />
+            )}
+            {msg.role === 'assistant' && lean4Available && (
+              <Lean4Badge
+                lean4Available={lean4Available}
+                lean4Result={lean4ResultsByNode?.get(msg.id)}
+                onVerify={() => onVerifyLean4?.(msg.id)}
+                onRetry={() => onRetryLean4?.(msg.id)}
               />
             )}
           </React.Fragment>

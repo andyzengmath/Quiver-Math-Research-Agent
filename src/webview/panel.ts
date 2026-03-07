@@ -6,6 +6,7 @@ import { MessageHandlerRegistry } from './message-handler'
 import { registerSendHandler } from './handlers/send-handler'
 import { registerBranchHandler } from './handlers/branch-handler'
 import { registerPaperHandler } from './handlers/paper-handler'
+import { registerLean4Handlers } from './handlers/lean4-handler'
 
 export class MathResearchPanel {
   public static readonly viewType = 'mathAgent.researchPanel'
@@ -78,6 +79,7 @@ export class MathResearchPanel {
     registerSendHandler(this.registry)
     registerBranchHandler(this.registry)
     registerPaperHandler(this.registry)
+    registerLean4Handlers(this.registry)
   }
 
   private registerBuiltInHandlers(): void {
@@ -94,6 +96,21 @@ export class MathResearchPanel {
 
       // Post providers (simplified — just report active provider info)
       panel.postToWebview({ type: 'providers', providers: [] })
+
+      // Post lean4 availability
+      const lean4Enabled = vscode.workspace
+        .getConfiguration('mathAgent.lean4')
+        .get<boolean>('enabled', false)
+      if (lean4Enabled) {
+        try {
+          const available = await panel.services.lean4.isAvailable()
+          panel.postToWebview({ type: 'lean4Available', available })
+        } catch {
+          panel.postToWebview({ type: 'lean4Available', available: false })
+        }
+      } else {
+        panel.postToWebview({ type: 'lean4Available', available: false })
+      }
     })
 
     this.registry.register('stopStream', async (_msg, panel) => {

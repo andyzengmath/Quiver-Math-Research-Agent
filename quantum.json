@@ -2266,7 +2266,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 9,
-      "status": "in_progress",
+      "status": "passed",
       "dependsOn": [
         "US-022",
         "US-030",
@@ -2284,7 +2284,7 @@
             "npm run build:webview"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-002",
@@ -2300,7 +2300,7 @@
             "npm run build:webview"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         }
       ],
       "review": {
@@ -2982,6 +2982,24 @@
         "package.json"
       ],
       "learnings": "pdf-parse v2 uses class-based API (new PDFParse({data}) then parser.getText()) instead of the v1 function-based API. The AttachedPaper type already exists in dialogue/types.ts but needs mirroring in webview-ui/src/types.ts with readonly arrays. Tree mutations (adding attachedPapers) work by getting the tree from TreeManager by reference and updating fields directly."
+    },
+    {
+      "timestamp": "2026-03-07T04:50:00Z",
+      "iteration": 15,
+      "storyId": "US-031",
+      "action": "task_completed",
+      "details": "Lean4Badge component with verify/retry/status badges. lean4-handler.ts with verifyLean4 and retryLean4 handlers. Wired into panel.ts and ResearchTab. lean4Available flag sent from requestState based on Lean4Service.isAvailable() and lean4.enabled config.",
+      "filesChanged": [
+        "webview-ui/src/components/Lean4Badge.tsx",
+        "webview-ui/src/components/Lean4Badge.css",
+        "src/webview/handlers/lean4-handler.ts",
+        "src/webview/panel.ts",
+        "src/webview/protocol.ts",
+        "webview-ui/src/types.ts",
+        "webview-ui/src/components/MessageList.tsx",
+        "webview-ui/src/components/ResearchTab.tsx"
+      ],
+      "learnings": "When adding new HostToWebview message types, must update both src/webview/protocol.ts and webview-ui/src/types.ts. The storeLean4Result helper follows the same tree mutation pattern as send-handler.ts (direct assignment to currentTree.nodes[nodeId]). Use TreeManager and StorageService concrete types rather than loose structural typing to avoid TS compatibility issues."
     }
   ],
   "codebasePatterns": [

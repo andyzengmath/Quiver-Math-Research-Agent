@@ -5,12 +5,13 @@ import { Breadcrumb, type BreadcrumbSegment } from './Breadcrumb'
 import { MultiAgentCards } from './MultiAgentCards'
 import { RagToggle } from './RagToggle'
 import { AttachedPapers } from './AttachedPapers'
+import { Lean4Badge } from './Lean4Badge'
 import { useWebviewMessage } from '../hooks/useWebviewMessage'
 import { useTreeState } from '../hooks/useTreeState'
 import { useStreaming } from '../hooks/useStreaming'
 import { useMultiAgent } from '../hooks/useMultiAgent'
 import { useRagStatus } from '../hooks/useRagStatus'
-import type { DialogueNode, DialogueTree } from '../types'
+import type { DialogueNode, DialogueTree, Lean4Result } from '../types'
 import './MessageList.css'
 import './RagComponents.css'
 
@@ -82,6 +83,8 @@ export function ResearchTab(): React.ReactElement {
 
   const [expandedSiblings, setExpandedSiblings] = useState(false)
   const [ragEnabled, setRagEnabled] = useState(true)
+  const [lean4Available, setLean4Available] = useState(false)
+  const [lean4Results, setLean4Results] = useState<ReadonlyMap<string, Lean4Result>>(new Map())
 
   // Scroll position storage per branch (keyed by last nodeId in activePath)
   const scrollPositionsRef = useRef<Map<string, number>>(new Map())
@@ -92,6 +95,23 @@ export function ResearchTab(): React.ReactElement {
   useEffect(() => {
     postMessage({ type: 'requestState' })
   }, [postMessage])
+
+  // Handle lean4Available and lean4Result messages
+  useEffect(() => {
+    if (!lastMessage) {
+      return
+    }
+    if (lastMessage.type === 'lean4Available') {
+      setLean4Available(lastMessage.available)
+    }
+    if (lastMessage.type === 'lean4Result') {
+      setLean4Results((prev) => {
+        const next = new Map(prev)
+        next.set(lastMessage.nodeId, lastMessage.result)
+        return next
+      })
+    }
+  }, [lastMessage])
 
   // Compute branch key from active path
   const branchKey = useMemo(() => {
@@ -174,6 +194,23 @@ export function ResearchTab(): React.ReactElement {
       postMessage({ type: 'openUrl', url })
     },
     [postMessage]
+  )
+
+  const handleVerifyLean4 = useCallback(
+    (nodeId: string) => {
+      postMessage({ type: 'verifyLean4', nodeId })
+    },
+    [postMessage]
+  )
+
+  const handleRetryLean4 = useCallback(
+    (nodeId: string) => {
+      const currentResult = lean4Results.get(nodeId)
+      // Track retry attempt count based on previous attempts
+      const attempt = currentResult ? 1 : 0
+      postMessage({ type: 'retryLean4', nodeId, attempt })
+    },
+    [postMessage, lean4Results]
   )
 
   const handleAddPaper = useCallback(() => {
@@ -320,6 +357,10 @@ export function ResearchTab(): React.ReactElement {
         ragStatusByNode={ragStatusByNode}
         onDismissCitation={dismissCitation}
         onOpenUrl={handleOpenUrl}
+        lean4Available={lean4Available}
+        lean4ResultsByNode={lean4Results}
+        onVerifyLean4={handleVerifyLean4}
+        onRetryLean4={handleRetryLean4}
       />
       {isMultiAgentActive && (
         <MultiAgentCards

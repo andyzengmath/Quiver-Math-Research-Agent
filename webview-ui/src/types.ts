@@ -107,6 +107,7 @@ export type HostToWebview =
   | { readonly type: 'texFiles'; readonly files: ReadonlyArray<TexFile> }
   | { readonly type: 'texStructure'; readonly structure: ReadonlyArray<TexStructureItem> }
   | { readonly type: 'draftResult'; readonly latex: string }
+  | { readonly type: 'lean4Available'; readonly available: boolean }
 
 /**
  * Messages sent from the webview to the extension host.

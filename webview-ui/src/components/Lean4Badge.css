@@ -1,0 +1,115 @@
+/* Lean4 Badge */
+.lean4-badge {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  margin-bottom: 4px;
+  max-width: 80%;
+  align-self: flex-start;
+}
+
+.lean4-badge__verify-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border: 1px solid var(--vscode-panel-border, #444);
+  border-radius: 12px;
+  background: var(--vscode-editor-inactiveSelectionBackground, rgba(255, 255, 255, 0.05));
+  color: var(--vscode-descriptionForeground, #888);
+  font-size: 11px;
+  font-family: var(--vscode-font-family, sans-serif);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.lean4-badge__verify-btn:hover {
+  background: var(--vscode-list-hoverBackground, rgba(255, 255, 255, 0.08));
+  color: var(--vscode-foreground, #ccc);
+  border-color: var(--vscode-focusBorder, #007acc);
+}
+
+.lean4-badge__pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--vscode-font-family, sans-serif);
+  white-space: nowrap;
+}
+
+.lean4-badge__pill--success {
+  background: rgba(40, 167, 69, 0.2);
+  color: #4ec96b;
+  border: 1px solid rgba(40, 167, 69, 0.4);
+}
+
+.lean4-badge__pill--error {
+  background: rgba(220, 53, 69, 0.2);
+  color: #f48771;
+  border: 1px solid rgba(220, 53, 69, 0.4);
+}
+
+.lean4-badge__pill--timeout {
+  background: rgba(255, 193, 7, 0.2);
+  color: #e0c060;
+  border: 1px solid rgba(255, 193, 7, 0.4);
+}
+
+.lean4-badge__retry-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border: 1px solid var(--vscode-panel-border, #444);
+  border-radius: 10px;
+  background: var(--vscode-editor-inactiveSelectionBackground, rgba(255, 255, 255, 0.05));
+  color: var(--vscode-descriptionForeground, #888);
+  font-size: 10px;
+  font-family: var(--vscode-font-family, sans-serif);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.lean4-badge__retry-btn:hover {
+  background: var(--vscode-list-hoverBackground, rgba(255, 255, 255, 0.08));
+  color: var(--vscode-foreground, #ccc);
+  border-color: var(--vscode-focusBorder, #007acc);
+}
+
+.lean4-badge__diagnostics-toggle {
+  background: none;
+  border: none;
+  color: var(--vscode-descriptionForeground, #888);
+  cursor: pointer;
+  font-size: 10px;
+  font-family: var(--vscode-font-family, sans-serif);
+  padding: 1px 4px;
+}
+
+.lean4-badge__diagnostics-toggle:hover {
+  color: var(--vscode-foreground, #ccc);
+}
+
+.lean4-badge__diagnostics {
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px 8px;
+  border: 1px solid var(--vscode-inputValidation-errorBorder, #be1100);
+  border-radius: 4px;
+  background: var(--vscode-editor-background, #1e1e1e);
+  font-size: 11px;
+  font-family: var(--vscode-editor-font-family, monospace);
+  line-height: 1.5;
+}
+
+.lean4-badge__diagnostic-line {
+  color: var(--vscode-errorForeground, #f48771);
+  word-break: break-word;
+}
+
+.lean4-badge__diagnostic-line + .lean4-badge__diagnostic-line {
+  margin-top: 2px;
+}
