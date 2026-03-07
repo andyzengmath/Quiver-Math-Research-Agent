@@ -13,6 +13,7 @@ import { ContextBuilder } from './dialogue/context'
 import { Lean4Service } from './lean4/service'
 import { WikipediaClient } from './knowledge/wikipedia'
 import { ArxivClient } from './knowledge/arxiv'
+import { NlabClient } from './knowledge/nlab'
 
 export interface Services {
   readonly personaManager: PersonaManager
@@ -20,10 +21,11 @@ export interface Services {
   readonly llm: LlmService
   readonly knowledgeCache: KnowledgeCache
   readonly wikipedia: WikipediaClient
+  readonly arxivClient: ArxivClient
+  readonly nlabClient: NlabClient
   readonly storage: StorageService
   readonly contextBuilder: ContextBuilder
   readonly lean4: Lean4Service
-  readonly arxivClient: ArxivClient
 }
 
 export function createServices(context: vscode.ExtensionContext): Services {
@@ -59,6 +61,7 @@ export function createServices(context: vscode.ExtensionContext): Services {
 
   const wikipedia = new WikipediaClient(knowledgeCache)
   const arxivClient = new ArxivClient(knowledgeCache)
+  const nlabClient = new NlabClient(knowledgeCache)
 
   return {
     personaManager,
@@ -66,9 +69,10 @@ export function createServices(context: vscode.ExtensionContext): Services {
     llm,
     knowledgeCache,
     wikipedia,
+    arxivClient,
+    nlabClient,
     storage,
     contextBuilder,
     lean4,
-    arxivClient,
   }
 }

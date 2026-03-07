@@ -143,6 +143,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
+    "cheerio": "^1.2.0",
     "fast-xml-parser": "^5.4.2",
     "openai": "^4.77.0",
     "uuid": "^13.0.0"
