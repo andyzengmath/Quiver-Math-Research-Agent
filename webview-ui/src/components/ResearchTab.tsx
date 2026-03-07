@@ -6,6 +6,7 @@ import { MultiAgentCards } from './MultiAgentCards'
 import { RagToggle } from './RagToggle'
 import { AttachedPapers } from './AttachedPapers'
 import { Lean4Badge } from './Lean4Badge'
+import { ModelSelector, type ProviderOption } from './ModelSelector'
 import { useWebviewMessage } from '../hooks/useWebviewMessage'
 import { useTreeState } from '../hooks/useTreeState'
 import { useStreaming } from '../hooks/useStreaming'
@@ -85,6 +86,8 @@ export function ResearchTab(): React.ReactElement {
   const [ragEnabled, setRagEnabled] = useState(true)
   const [lean4Available, setLean4Available] = useState(false)
   const [lean4Results, setLean4Results] = useState<ReadonlyMap<string, Lean4Result>>(new Map())
+  const [providers, setProviders] = useState<ReadonlyArray<ProviderOption>>([])
+  const [selectedProviderId, setSelectedProviderId] = useState('')
 
   // Scroll position storage per branch (keyed by last nodeId in activePath)
   const scrollPositionsRef = useRef<Map<string, number>>(new Map())
@@ -96,7 +99,7 @@ export function ResearchTab(): React.ReactElement {
     postMessage({ type: 'requestState' })
   }, [postMessage])
 
-  // Handle lean4Available and lean4Result messages
+  // Handle lean4Available, lean4Result, and providers messages
   useEffect(() => {
     if (!lastMessage) {
       return
@@ -111,7 +114,19 @@ export function ResearchTab(): React.ReactElement {
         return next
       })
     }
-  }, [lastMessage])
+    if (lastMessage.type === 'providers') {
+      const providerOptions: ProviderOption[] = lastMessage.providers.map((p) => ({
+        id: p.id,
+        model: p.model,
+        label: p.label ?? p.id,
+      }))
+      setProviders(providerOptions)
+      // Set selected to first provider if none selected yet
+      if (providerOptions.length > 0 && selectedProviderId === '') {
+        setSelectedProviderId(providerOptions[0].id)
+      }
+    }
+  }, [lastMessage, selectedProviderId])
 
   // Compute branch key from active path
   const branchKey = useMemo(() => {
@@ -179,6 +194,16 @@ export function ResearchTab(): React.ReactElement {
       postMessage({ type: 'switchBranch', nodeId })
     },
     [postMessage]
+  )
+
+  const handleModelSelect = useCallback(
+    (providerId: string) => {
+      setSelectedProviderId(providerId)
+      const selected = providers.find((p) => p.id === providerId)
+      const model = selected?.model ?? ''
+      postMessage({ type: 'setModel', provider: providerId, model })
+    },
+    [postMessage, providers]
   )
 
   const handleRagToggle = useCallback(
@@ -315,6 +340,13 @@ export function ResearchTab(): React.ReactElement {
           <Breadcrumb path={breadcrumbPath} onNavigate={handleBreadcrumbNavigate} />
         )}
         <div className="research-tab__header-actions">
+          {providers.length > 0 && (
+            <ModelSelector
+              providers={providers}
+              selectedProviderId={selectedProviderId}
+              onSelect={handleModelSelect}
+            />
+          )}
           <RagToggle enabled={ragEnabled} onToggle={handleRagToggle} />
         </div>
       </div>

@@ -7,6 +7,7 @@ import { registerSendHandler } from './handlers/send-handler'
 import { registerBranchHandler } from './handlers/branch-handler'
 import { registerPaperHandler } from './handlers/paper-handler'
 import { registerLean4Handlers } from './handlers/lean4-handler'
+import { registerModelHandler } from './handlers/model-handler'
 
 export class MathResearchPanel {
   public static readonly viewType = 'mathAgent.researchPanel'
@@ -80,6 +81,7 @@ export class MathResearchPanel {
     registerBranchHandler(this.registry)
     registerPaperHandler(this.registry)
     registerLean4Handlers(this.registry)
+    registerModelHandler(this.registry)
   }
 
   private registerBuiltInHandlers(): void {
@@ -94,8 +96,27 @@ export class MathResearchPanel {
       const personas = panel.services.personaManager.listPersonas()
       panel.postToWebview({ type: 'personas', personas })
 
-      // Post providers (simplified — just report active provider info)
-      panel.postToWebview({ type: 'providers', providers: [] })
+      // Post providers: build list from registered providers with configured models
+      const providerConfigs: Array<{ id: string; model: string; label: string }> = []
+      const llmConfig = vscode.workspace.getConfiguration('mathAgent.llm')
+
+      const providerDefs: ReadonlyArray<{ id: string; modelKey: string; label: string }> = [
+        { id: 'openai', modelKey: 'openaiModel', label: 'OpenAI' },
+        { id: 'anthropic', modelKey: 'anthropicModel', label: 'Anthropic' },
+        { id: 'google', modelKey: 'googleModel', label: 'Google' },
+      ]
+
+      for (const def of providerDefs) {
+        try {
+          panel.services.llm.getProvider(def.id)
+          const model = llmConfig.get<string>(def.modelKey, '')
+          providerConfigs.push({ id: def.id, model, label: def.label })
+        } catch {
+          // Provider not registered, skip
+        }
+      }
+
+      panel.postToWebview({ type: 'providers', providers: providerConfigs })
 
       // Post lean4 availability
       const lean4Enabled = vscode.workspace

@@ -46,6 +46,7 @@ export interface RagStatus {
 export interface ProviderInfo {
   readonly id: string
   readonly model: string
+  readonly label?: string
 }
 
 export interface TreeListItem {
