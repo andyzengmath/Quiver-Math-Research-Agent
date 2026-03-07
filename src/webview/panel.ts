@@ -8,6 +8,7 @@ import { registerBranchHandler } from './handlers/branch-handler'
 import { registerPaperHandler } from './handlers/paper-handler'
 import { registerLean4Handlers } from './handlers/lean4-handler'
 import { registerModelHandler } from './handlers/model-handler'
+import { registerTreeHandler } from './handlers/tree-handler'
 
 export class MathResearchPanel {
   public static readonly viewType = 'mathAgent.researchPanel'
@@ -82,6 +83,7 @@ export class MathResearchPanel {
     registerPaperHandler(this.registry)
     registerLean4Handlers(this.registry)
     registerModelHandler(this.registry)
+    registerTreeHandler(this.registry)
   }
 
   private registerBuiltInHandlers(): void {
@@ -169,6 +171,11 @@ export class MathResearchPanel {
   public setCurrentTree(tree: DialogueTree): void {
     this.currentTree = tree
     this.currentTreeId = tree.id
+  }
+
+  public clearCurrentTree(): void {
+    this.currentTree = null
+    this.currentTreeId = null
   }
 
   public setActiveCancellation(cts: vscode.CancellationTokenSource): void {

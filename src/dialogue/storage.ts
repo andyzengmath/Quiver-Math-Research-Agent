@@ -97,6 +97,29 @@ export class StorageService {
     return entries
   }
 
+  deleteTree(treeId: string): void {
+    const treeDir = this.getTreeDir()
+    const filePath = path.join(treeDir, `${treeId}.json`)
+    const backupPath = path.join(treeDir, `${treeId}.backup.json`)
+
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath)
+    }
+    if (fs.existsSync(backupPath)) {
+      fs.unlinkSync(backupPath)
+    }
+  }
+
+  renameTree(treeId: string, title: string): void {
+    const tree = this.loadTree(treeId)
+    const updatedTree: DialogueTree = {
+      ...tree,
+      title,
+      updatedAt: Date.now(),
+    }
+    this.saveTree(updatedTree)
+  }
+
   ensureGitignore(): void {
     const gitignorePath = path.join(this.workspaceRoot, '.gitignore')
 

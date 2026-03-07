@@ -7,12 +7,13 @@ import { RagToggle } from './RagToggle'
 import { AttachedPapers } from './AttachedPapers'
 import { Lean4Badge } from './Lean4Badge'
 import { ModelSelector, type ProviderOption } from './ModelSelector'
+import { TreeSelector } from './TreeSelector'
 import { useWebviewMessage } from '../hooks/useWebviewMessage'
 import { useTreeState } from '../hooks/useTreeState'
 import { useStreaming } from '../hooks/useStreaming'
 import { useMultiAgent } from '../hooks/useMultiAgent'
 import { useRagStatus } from '../hooks/useRagStatus'
-import type { DialogueNode, DialogueTree, Lean4Result } from '../types'
+import type { DialogueNode, DialogueTree, Lean4Result, TreeListItem } from '../types'
 import './MessageList.css'
 import './RagComponents.css'
 
@@ -88,15 +89,18 @@ export function ResearchTab(): React.ReactElement {
   const [lean4Results, setLean4Results] = useState<ReadonlyMap<string, Lean4Result>>(new Map())
   const [providers, setProviders] = useState<ReadonlyArray<ProviderOption>>([])
   const [selectedProviderId, setSelectedProviderId] = useState('')
+  const [treeList, setTreeList] = useState<ReadonlyArray<TreeListItem>>([])
+  const [activeTreeId, setActiveTreeId] = useState<string | null>(null)
 
   // Scroll position storage per branch (keyed by last nodeId in activePath)
   const scrollPositionsRef = useRef<Map<string, number>>(new Map())
   const messageListContainerRef = useRef<HTMLDivElement>(null)
   const previousBranchKeyRef = useRef<string | null>(null)
 
-  // On mount, request current state from extension host
+  // On mount, request current state and tree list from extension host
   useEffect(() => {
     postMessage({ type: 'requestState' })
+    postMessage({ type: 'listTrees' })
   }, [postMessage])
 
   // Handle lean4Available, lean4Result, and providers messages
@@ -125,6 +129,12 @@ export function ResearchTab(): React.ReactElement {
       if (providerOptions.length > 0 && selectedProviderId === '') {
         setSelectedProviderId(providerOptions[0].id)
       }
+    }
+    if (lastMessage.type === 'treeList') {
+      setTreeList(lastMessage.trees)
+    }
+    if (lastMessage.type === 'treeState') {
+      setActiveTreeId(lastMessage.tree.id)
     }
   }, [lastMessage, selectedProviderId])
 
@@ -192,6 +202,34 @@ export function ResearchTab(): React.ReactElement {
   const handleSiblingSwitch = useCallback(
     (nodeId: string) => {
       postMessage({ type: 'switchBranch', nodeId })
+    },
+    [postMessage]
+  )
+
+  const handleTreeSelect = useCallback(
+    (treeId: string) => {
+      postMessage({ type: 'selectTree', treeId })
+    },
+    [postMessage]
+  )
+
+  const handleTreeCreate = useCallback(
+    (title: string) => {
+      postMessage({ type: 'createTree', title })
+    },
+    [postMessage]
+  )
+
+  const handleTreeRename = useCallback(
+    (treeId: string, title: string) => {
+      postMessage({ type: 'renameTree', treeId, title })
+    },
+    [postMessage]
+  )
+
+  const handleTreeDelete = useCallback(
+    (treeId: string) => {
+      postMessage({ type: 'deleteTree', treeId })
     },
     [postMessage]
   )
@@ -336,9 +374,19 @@ export function ResearchTab(): React.ReactElement {
   return (
     <div className="research-tab" ref={messageListContainerRef}>
       <div className="research-tab__header-bar">
-        {breadcrumbPath.length > 0 && (
-          <Breadcrumb path={breadcrumbPath} onNavigate={handleBreadcrumbNavigate} />
-        )}
+        <div className="research-tab__header-selectors">
+          <TreeSelector
+            trees={treeList}
+            activeTreeId={activeTreeId}
+            onSelect={handleTreeSelect}
+            onCreate={handleTreeCreate}
+            onRename={handleTreeRename}
+            onDelete={handleTreeDelete}
+          />
+          {breadcrumbPath.length > 0 && (
+            <Breadcrumb path={breadcrumbPath} onNavigate={handleBreadcrumbNavigate} />
+          )}
+        </div>
         <div className="research-tab__header-actions">
           {providers.length > 0 && (
             <ModelSelector
