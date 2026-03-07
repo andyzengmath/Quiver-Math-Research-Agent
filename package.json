@@ -160,6 +160,7 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.0",
     "@anthropic-ai/sdk": "^0.78.0",
     "cheerio": "^1.2.0",
     "fast-xml-parser": "^5.4.2",
