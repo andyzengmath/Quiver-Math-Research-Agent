@@ -6,10 +6,18 @@ import { Citation } from '../knowledge/types'
 const DEFAULT_SYSTEM_PROMPT =
   'You are a helpful math research assistant. Help the user explore mathematical ideas, prove theorems, and develop rigorous arguments. Provide clear explanations and cite relevant mathematical concepts.'
 
+const SUMMARY_PLACEHOLDER =
+  '[Earlier context summarized — see memory file]'
+
 export interface ContextBuildOptions {
   readonly persona?: string
   readonly ragCitations?: Citation[]
   readonly maxTokens?: number
+}
+
+export interface TrimmingOptions extends ContextBuildOptions {
+  readonly summarizer?: (messages: LlmMessage[]) => Promise<string>
+  readonly writeMemoryFile?: (treeId: string, content: string) => Promise<void>
 }
 
 export class ContextBuilder {
@@ -17,6 +25,124 @@ export class ContextBuilder {
 
   constructor(personaManager: PersonaManager) {
     this.personaManager = personaManager
+  }
+
+  /**
+   * Estimates token count for a list of messages using chars/4 approximation.
+   */
+  estimateTokens(messages: LlmMessage[]): number {
+    const totalChars = messages.reduce(
+      (sum, msg) => sum + msg.content.length,
+      0
+    )
+    return Math.floor(totalChars / 4)
+  }
+
+  /**
+   * Builds context messages with trimming support.
+   * When maxTokens is set and context exceeds the budget:
+   *   1. RAG messages are removed first
+   *   2. Oldest path messages are replaced with a summary placeholder
+   *   3. Attached paper messages are never removed
+   * When trimming occurs, a memory file is written via writeMemoryFile.
+   */
+  async buildWithTrimming(
+    tree: DialogueTree,
+    nodeId: string,
+    options?: TrimmingOptions
+  ): Promise<LlmMessage[]> {
+    const targetNode = tree.nodes[nodeId]
+    if (!targetNode) {
+      throw new Error(`Node not found in tree: '${nodeId}'`)
+    }
+
+    // Assemble all messages using the same logic as build()
+    const systemPrompt = this.getSystemPrompt(options?.persona)
+    const systemMessage: LlmMessage = { role: 'system', content: systemPrompt }
+
+    const path = this.walkPath(tree, nodeId)
+    const paperMessages = this.buildPaperMessages(tree, path)
+    const pathMessages = this.buildPathMessages(path)
+    const ragMessages = this.buildRagMessages(options?.ragCitations)
+
+    // If no maxTokens, return all messages without trimming
+    if (!options?.maxTokens) {
+      return [systemMessage, ...paperMessages, ...pathMessages, ...ragMessages]
+    }
+
+    const maxTokens = options.maxTokens
+
+    // Start with all messages
+    let currentMessages = [systemMessage, ...paperMessages, ...pathMessages, ...ragMessages]
+
+    // Check if trimming is needed
+    if (this.estimateTokens(currentMessages) <= maxTokens) {
+      return currentMessages
+    }
+
+    // Phase 1: Remove RAG messages first
+    let trimmedMessages: LlmMessage[] = []
+    const hasRag = ragMessages.length > 0
+    if (hasRag) {
+      currentMessages = [systemMessage, ...paperMessages, ...pathMessages]
+      trimmedMessages = [...ragMessages]
+    }
+
+    if (this.estimateTokens(currentMessages) <= maxTokens) {
+      // RAG removal was sufficient - still write memory if we trimmed
+      if (trimmedMessages.length > 0 && options.summarizer && options.writeMemoryFile) {
+        const memoryContent = await this.formatMemoryFile(
+          trimmedMessages,
+          options.summarizer
+        )
+        await options.writeMemoryFile(tree.id, memoryContent)
+      }
+      return currentMessages
+    }
+
+    // Phase 2: Summarize oldest path messages
+    // System prompt + paper messages are protected and never removed
+    const availablePathMessages = [...pathMessages]
+
+    // Remove oldest path messages one by one until under budget
+    const removedPathMessages: LlmMessage[] = []
+    while (
+      availablePathMessages.length > 1 &&
+      this.estimateTokens([
+        systemMessage,
+        ...paperMessages,
+        { role: 'system', content: SUMMARY_PLACEHOLDER },
+        ...availablePathMessages,
+      ]) > maxTokens
+    ) {
+      const removed = availablePathMessages.shift()
+      if (removed) {
+        removedPathMessages.push(removed)
+      }
+    }
+
+    // Build the trimmed context
+    const allTrimmedMessages = [...trimmedMessages, ...removedPathMessages]
+
+    if (removedPathMessages.length > 0) {
+      currentMessages = [
+        systemMessage,
+        ...paperMessages,
+        { role: 'system', content: SUMMARY_PLACEHOLDER },
+        ...availablePathMessages,
+      ]
+    }
+
+    // Write memory file if we trimmed anything
+    if (allTrimmedMessages.length > 0 && options.summarizer && options.writeMemoryFile) {
+      const memoryContent = await this.formatMemoryFile(
+        allTrimmedMessages,
+        options.summarizer
+      )
+      await options.writeMemoryFile(tree.id, memoryContent)
+    }
+
+    return currentMessages
   }
 
   build(
@@ -148,5 +274,31 @@ export class ContextBuilder {
         content: `Reference material from sources:\n\n${formattedCitations}`,
       },
     ]
+  }
+
+  /**
+   * Formats memory file content with Part 1 (LLM summary) and Part 2 (full transcript).
+   */
+  private async formatMemoryFile(
+    trimmedMessages: LlmMessage[],
+    summarizer: (messages: LlmMessage[]) => Promise<string>
+  ): Promise<string> {
+    const summary = await summarizer(trimmedMessages)
+
+    const transcript = trimmedMessages
+      .map((msg) => `[${msg.role}]: ${msg.content}`)
+      .join('\n\n')
+
+    return [
+      '# Context Trim Memory File',
+      '',
+      '## Part 1: Summary',
+      '',
+      summary,
+      '',
+      '## Part 2: Full Transcript',
+      '',
+      transcript,
+    ].join('\n')
   }
 }
