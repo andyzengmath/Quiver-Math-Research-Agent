@@ -5,6 +5,7 @@ export interface NodeMetadata {
   timestamp: number
   model: string
   persona?: string
+  incomplete?: boolean
   sources?: Citation[]
   lean4Result?: Lean4Result
 }

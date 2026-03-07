@@ -14,7 +14,7 @@ export function activate(context: vscode.ExtensionContext): void {
   const openPanelCommand = vscode.commands.registerCommand(
     'mathAgent.openPanel',
     () => {
-      MathResearchPanel.createOrShow(context)
+      MathResearchPanel.createOrShow(context, services)
     }
   )
 

@@ -1,4 +1,9 @@
 import * as vscode from 'vscode'
+import { Services } from '../services'
+import { DialogueTree } from '../dialogue/types'
+import { HostToWebview, WebviewToHost } from './protocol'
+import { MessageHandlerRegistry } from './message-handler'
+import { registerSendHandler } from './handlers/send-handler'
 
 export class MathResearchPanel {
   public static readonly viewType = 'mathAgent.researchPanel'
@@ -9,7 +14,14 @@ export class MathResearchPanel {
   private readonly extensionUri: vscode.Uri
   private disposables: vscode.Disposable[] = []
 
-  public static createOrShow(context: vscode.ExtensionContext): void {
+  public readonly services: Services
+  public readonly registry: MessageHandlerRegistry
+
+  private currentTreeId: string | null = null
+  private currentTree: DialogueTree | null = null
+  private activeCancellation: vscode.CancellationTokenSource | null = null
+
+  public static createOrShow(context: vscode.ExtensionContext, services: Services): void {
     const column = vscode.ViewColumn.Beside
 
     if (MathResearchPanel.currentPanel) {
@@ -31,21 +43,93 @@ export class MathResearchPanel {
       }
     )
 
-    MathResearchPanel.currentPanel = new MathResearchPanel(panel, context.extensionUri)
+    MathResearchPanel.currentPanel = new MathResearchPanel(panel, context.extensionUri, services)
   }
 
-  private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
+  private constructor(
+    panel: vscode.WebviewPanel,
+    extensionUri: vscode.Uri,
+    services: Services
+  ) {
     this.panel = panel
     this.extensionUri = extensionUri
+    this.services = services
+    this.registry = new MessageHandlerRegistry()
 
     this.panel.webview.html = this.getHtmlForWebview(this.panel.webview)
 
     this.panel.onDidDispose(() => this.dispose(), null, this.disposables)
+
+    // Wire up message handling from webview
+    this.panel.webview.onDidReceiveMessage(
+      (msg: WebviewToHost) => {
+        void this.registry.handle(msg, this)
+      },
+      null,
+      this.disposables
+    )
+
+    // Register built-in handlers
+    this.registerBuiltInHandlers()
+
+    // Register feature handlers
+    registerSendHandler(this.registry)
+  }
+
+  private registerBuiltInHandlers(): void {
+    this.registry.register('requestState', async (_msg, panel) => {
+      // Post current tree state
+      const tree = panel.getCurrentTree()
+      if (tree) {
+        panel.postToWebview({ type: 'treeState', tree })
+      }
+
+      // Post personas
+      const personas = panel.services.personaManager.listPersonas()
+      panel.postToWebview({ type: 'personas', personas })
+
+      // Post providers (simplified — just report active provider info)
+      panel.postToWebview({ type: 'providers', providers: [] })
+    })
+
+    this.registry.register('stopStream', async (_msg, panel) => {
+      panel.cancelActiveStream()
+    })
+  }
+
+  public postToWebview(msg: HostToWebview): void {
+    void this.panel.webview.postMessage(msg)
+  }
+
+  public getCurrentTree(): DialogueTree | null {
+    return this.currentTree
+  }
+
+  public getCurrentTreeId(): string | null {
+    return this.currentTreeId
+  }
+
+  public setCurrentTree(tree: DialogueTree): void {
+    this.currentTree = tree
+    this.currentTreeId = tree.id
+  }
+
+  public setActiveCancellation(cts: vscode.CancellationTokenSource): void {
+    this.activeCancellation = cts
+  }
+
+  public cancelActiveStream(): void {
+    if (this.activeCancellation) {
+      this.activeCancellation.cancel()
+      this.activeCancellation.dispose()
+      this.activeCancellation = null
+    }
   }
 
   private dispose(): void {
     MathResearchPanel.currentPanel = undefined
 
+    this.cancelActiveStream()
     this.panel.dispose()
 
     while (this.disposables.length) {
