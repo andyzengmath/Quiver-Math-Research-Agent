@@ -60,6 +60,9 @@ export class MathResearchPanel {
     const scriptUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.extensionUri, 'out', 'webview', 'bundle.js')
     )
+    const styleUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, 'out', 'webview', 'bundle.css')
+    )
 
     const nonce = getNonce()
 
@@ -75,6 +78,7 @@ export class MathResearchPanel {
                    font-src ${webview.cspSource};
                    img-src ${webview.cspSource} https:;">
     <title>Math Research Studio</title>
+    <link rel="stylesheet" href="${styleUri}">
 </head>
 <body>
     <div id="root"></div>

@@ -4,7 +4,9 @@ esbuild
   .build({
     entryPoints: ['webview-ui/src/index.tsx'],
     bundle: true,
-    outfile: 'out/webview/bundle.js',
+    outdir: 'out/webview',
+    entryNames: 'bundle',
+    assetNames: 'assets/[name]-[hash]',
     format: 'iife',
     platform: 'browser',
     target: 'es2020',

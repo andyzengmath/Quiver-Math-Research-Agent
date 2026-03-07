@@ -118,9 +118,13 @@
     "watch": "tsc -watch -p ./",
     "lint": "eslint src --ext ts",
     "build:webview": "node esbuild.webview.js",
-    "test:unit": "mocha --require tsx src/test/**/*.test.ts --timeout 10000"
+    "test:unit": "mocha --require tsx src/test/**/*.test.ts --timeout 10000",
+    "test:webview": "vitest run --config webview-ui/vitest.config.ts"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/markdown-it": "^14.1.2",
     "@types/mocha": "^10.0.10",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -132,6 +136,10 @@
     "cross-env": "^10.1.0",
     "esbuild": "^0.27.3",
     "eslint": "^9.0.0",
+    "jsdom": "^28.1.0",
+    "katex": "^0.16.37",
+    "markdown-it": "^14.1.1",
+    "markdown-it-texmath": "^1.0.0",
     "mocha": "^11.7.5",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
@@ -139,7 +147,8 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "tsx": "^4.21.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.18"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

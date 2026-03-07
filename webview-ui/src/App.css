@@ -38,6 +38,7 @@
 
 .tab-content {
   flex: 1;
-  overflow: auto;
-  padding: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
