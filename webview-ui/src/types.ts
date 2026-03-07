@@ -81,7 +81,7 @@ export type HostToWebview =
   | { readonly type: 'ragStatus'; readonly nodeId: string; readonly status: RagStatus }
   | { readonly type: 'personas'; readonly personas: ReadonlyArray<PersonaConfig> }
   | { readonly type: 'providers'; readonly providers: ReadonlyArray<ProviderInfo> }
-  | { readonly type: 'multiAgentResult'; readonly responses: ReadonlyArray<unknown>; readonly synthesis: string }
+  | { readonly type: 'multiAgentResult'; readonly responses: ReadonlyArray<{ readonly personaId: string; readonly label: string; readonly response: string }>; readonly synthesis: string }
   | { readonly type: 'lean4Result'; readonly nodeId: string; readonly result: Lean4Result }
   | { readonly type: 'treeList'; readonly trees: ReadonlyArray<TreeListItem> }
   | { readonly type: 'texFiles'; readonly files: ReadonlyArray<TexFile> }

@@ -155,6 +155,18 @@
           "type": "number",
           "default": 60000,
           "description": "Timeout in milliseconds for Lean4 verification (default: 60000)"
+        },
+        "mathAgent.multiAgent.personas": {
+          "type": "array",
+          "default": [
+            "algebraist",
+            "analyst",
+            "geometer"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "List of persona IDs to use in multi-agent mode"
         }
       }
     }

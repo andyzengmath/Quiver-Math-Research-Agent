@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 import { MessageHandlerRegistry } from '../message-handler'
 import { WebviewToHost } from '../protocol'
 import type { MathResearchPanel } from '../panel'
+import { runMultiAgent, getMultiAgentPersonaIds } from '../../chat/multi-agent'
 
 export function registerSendHandler(registry: MessageHandlerRegistry): void {
   registry.register('send', async (msg: WebviewToHost, panel: MathResearchPanel) => {
@@ -9,7 +10,7 @@ export function registerSendHandler(registry: MessageHandlerRegistry): void {
       return
     }
 
-    const { treeManager, contextBuilder, llm, storage } = panel.services
+    const { treeManager, contextBuilder, llm, storage, personaManager } = panel.services
 
     // Get or create a tree
     let tree = panel.getCurrentTree()
@@ -39,6 +40,85 @@ export function registerSendHandler(registry: MessageHandlerRegistry): void {
 
     // Post updated tree state to webview
     panel.postToWebview({ type: 'treeState', tree })
+
+    // If multi-agent mode is active, run multi-agent orchestration instead
+    if (tree.activePersona === 'multi-agent') {
+      const cts = new vscode.CancellationTokenSource()
+      panel.setActiveCancellation(cts)
+
+      try {
+        const personaIds = getMultiAgentPersonaIds()
+        const result = await runMultiAgent(
+          msg.content,
+          personaIds,
+          personaManager,
+          contextBuilder,
+          llm,
+          tree,
+          userNode.id,
+          cts.token
+        )
+
+        // Store the synthesis as an assistant node in the tree
+        const assistantNode = treeManager.addNode(
+          treeId,
+          userNode.id,
+          'assistant',
+          result.synthesis,
+          {
+            timestamp: Date.now(),
+            model: 'multi-agent',
+          }
+        )
+
+        // Post multi-agent result to webview
+        panel.postToWebview({
+          type: 'multiAgentResult',
+          responses: result.individualResponses.map((r) => ({
+            personaId: r.personaId,
+            label: r.label,
+            response: r.response,
+          })),
+          synthesis: result.synthesis,
+        })
+
+        panel.postToWebview({
+          type: 'streamEnd',
+          nodeId: assistantNode.id,
+        })
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error'
+        const assistantNode = treeManager.addNode(
+          treeId,
+          userNode.id,
+          'assistant',
+          `[Multi-agent error: ${errorMessage}]`,
+          {
+            timestamp: Date.now(),
+            model: 'multi-agent',
+          }
+        )
+        panel.postToWebview({
+          type: 'streamEnd',
+          nodeId: assistantNode.id,
+        })
+      }
+
+      // Save tree and post updated state
+      tree = treeManager.getTree(treeId)
+      panel.setCurrentTree(tree)
+
+      try {
+        storage.saveTree(tree)
+      } catch {
+        // Storage errors should not crash the handler
+      }
+
+      panel.postToWebview({ type: 'treeState', tree })
+      panel.cancelActiveStream()
+      return
+    }
 
     // Build LLM context from the conversation path, using active persona if set
     const llmMessages = contextBuilder.build(tree, userNode.id, {

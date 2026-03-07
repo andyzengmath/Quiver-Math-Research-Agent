@@ -2,9 +2,11 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MessageList, type Message } from './MessageList'
 import { MessageInput } from './MessageInput'
 import { Breadcrumb, type BreadcrumbSegment } from './Breadcrumb'
+import { MultiAgentCards } from './MultiAgentCards'
 import { useWebviewMessage } from '../hooks/useWebviewMessage'
 import { useTreeState } from '../hooks/useTreeState'
 import { useStreaming } from '../hooks/useStreaming'
+import { useMultiAgent } from '../hooks/useMultiAgent'
 import type { DialogueNode, DialogueTree } from '../types'
 import './MessageList.css'
 
@@ -71,6 +73,7 @@ export function ResearchTab(): React.ReactElement {
   const { lastMessage, postMessage } = useWebviewMessage()
   const { tree, messages: treeMessages } = useTreeState(lastMessage)
   const { streamingNodeId, streamingText, isStreaming } = useStreaming(lastMessage)
+  const { responses: multiAgentResponses, synthesis: multiAgentSynthesis, isActive: isMultiAgentActive } = useMultiAgent(lastMessage)
 
   const [expandedSiblings, setExpandedSiblings] = useState(false)
 
@@ -150,6 +153,18 @@ export function ResearchTab(): React.ReactElement {
       postMessage({ type: 'switchBranch', nodeId })
     },
     [postMessage]
+  )
+
+  const handlePromoteToBranch = useCallback(
+    (_personaId: string, content: string) => {
+      // Fork from the last node on the active path, then send the promoted content
+      if (tree && tree.activePath.length > 0) {
+        const lastNodeId = tree.activePath[tree.activePath.length - 1]
+        postMessage({ type: 'fork', nodeId: lastNodeId })
+        postMessage({ type: 'send', content })
+      }
+    },
+    [postMessage, tree]
   )
 
   // Build breadcrumb path from tree
@@ -247,6 +262,13 @@ export function ResearchTab(): React.ReactElement {
         </div>
       )}
       <MessageList messages={displayMessages} />
+      {isMultiAgentActive && (
+        <MultiAgentCards
+          responses={multiAgentResponses}
+          synthesis={multiAgentSynthesis}
+          onPromoteToBranch={handlePromoteToBranch}
+        />
+      )}
       <div className="input-area">
         {isStreaming && (
           <button

@@ -5,7 +5,7 @@
   "prdPath": "tasks/prd-math-research-agent.md",
   "designPath": "docs/plans/2026-03-06-math-research-agent-design.md",
   "createdAt": "2026-03-06T12:00:00Z",
-  "updatedAt": "2026-03-06T22:46:27.574Z",
+  "updatedAt": "2026-03-07T03:49:25.872Z",
   "fileConflicts": [
     {
       "file": "src/knowledge/types.ts",
@@ -414,7 +414,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 3,
-      "status": "pending",
+      "status": "passed",
       "dependsOn": [
         "US-002"
       ],
@@ -431,7 +431,7 @@
             "npm run test:unit -- --grep 'GoogleProvider'"
           ],
           "testFirst": true,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-002",
@@ -446,19 +446,19 @@
             "npm run test:unit -- --grep 'GoogleProvider'"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         }
       ],
       "review": {
         "specCompliance": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T02:21:50.607Z"
         },
         "codeQuality": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T02:21:50.608Z"
         }
       },
       "retries": {
@@ -483,7 +483,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 4,
-      "status": "pending",
+      "status": "passed",
       "dependsOn": [
         "US-002"
       ],
@@ -499,7 +499,7 @@
             "npm run compile"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-002",
@@ -513,19 +513,19 @@
             "npm run compile"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         }
       ],
       "review": {
         "specCompliance": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T03:00:55.260Z"
         },
         "codeQuality": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T03:00:55.261Z"
         }
       },
       "retries": {
@@ -769,7 +769,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 7,
-      "status": "pending",
+      "status": "passed",
       "dependsOn": [
         "US-010",
         "US-002"
@@ -786,7 +786,7 @@
             "npm run test:unit -- --grep 'trimming'"
           ],
           "testFirst": true,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-002",
@@ -800,19 +800,19 @@
             "npm run test:unit -- --grep 'trimming'"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         }
       ],
       "review": {
         "specCompliance": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T03:22:01.266Z"
         },
         "codeQuality": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T03:22:01.267Z"
         }
       },
       "retries": {
@@ -906,7 +906,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 6,
-      "status": "pending",
+      "status": "passed",
       "dependsOn": [
         "US-017"
       ],
@@ -923,7 +923,7 @@
             "npm run test:unit -- --grep 'ArxivClient'"
           ],
           "testFirst": true,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-002",
@@ -938,19 +938,19 @@
             "npm run test:unit -- --grep 'ArxivClient'"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         }
       ],
       "review": {
         "specCompliance": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T01:36:11.976Z"
         },
         "codeQuality": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T01:36:11.978Z"
         }
       },
       "retries": {
@@ -1011,14 +1011,14 @@
       ],
       "review": {
         "specCompliance": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T01:25:17.126Z"
         },
         "codeQuality": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T01:25:17.127Z"
         }
       },
       "retries": {
@@ -1044,7 +1044,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 6,
-      "status": "pending",
+      "status": "passed",
       "dependsOn": [
         "US-017"
       ],
@@ -1062,7 +1062,7 @@
             "npm run test:unit -- --grep 'NlabClient'"
           ],
           "testFirst": true,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-002",
@@ -1076,19 +1076,19 @@
             "npm run test:unit -- --grep 'NlabClient'"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         }
       ],
       "review": {
         "specCompliance": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T01:42:04.079Z"
         },
         "codeQuality": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T01:42:04.079Z"
         }
       },
       "retries": {
@@ -1113,7 +1113,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 7,
-      "status": "pending",
+      "status": "passed",
       "dependsOn": [
         "US-013",
         "US-014",
@@ -1133,7 +1133,7 @@
             "npm run compile"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-002",
@@ -1146,7 +1146,7 @@
             "npm run test:unit -- --grep 'RagOrchestrator'"
           ],
           "testFirst": true,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-003",
@@ -1161,19 +1161,19 @@
             "npm run test:unit -- --grep 'RagOrchestrator'"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         }
       ],
       "review": {
         "specCompliance": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T02:33:30.004Z"
         },
         "codeQuality": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T02:33:30.004Z"
         }
       },
       "retries": {
@@ -1277,7 +1277,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 8,
-      "status": "pending",
+      "status": "passed",
       "dependsOn": [
         "US-002",
         "US-010",
@@ -1295,7 +1295,7 @@
             "npm run compile"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-002",
@@ -1308,7 +1308,7 @@
             "npm run compile"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-003",
@@ -1321,19 +1321,19 @@
             "npm run compile"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         }
       ],
       "review": {
         "specCompliance": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T02:16:13.846Z"
         },
         "codeQuality": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T02:16:13.846Z"
         }
       },
       "retries": {
@@ -1357,7 +1357,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 9,
-      "status": "pending",
+      "status": "passed",
       "dependsOn": [
         "US-018",
         "US-016"
@@ -1374,7 +1374,7 @@
             "npm run compile"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-002",
@@ -1388,19 +1388,19 @@
             "npm run compile"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         }
       ],
       "review": {
         "specCompliance": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T03:06:07.921Z"
         },
         "codeQuality": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T03:06:07.921Z"
         }
       },
       "retries": {
@@ -1515,7 +1515,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 5,
-      "status": "pending",
+      "status": "passed",
       "dependsOn": [
         "US-020"
       ],
@@ -1533,7 +1533,7 @@
             "npm run build:webview"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-002",
@@ -1549,7 +1549,7 @@
             "npm run build:webview"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-003",
@@ -1562,7 +1562,7 @@
             "npm run build:webview"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-004",
@@ -1579,19 +1579,19 @@
             "npm run test:webview"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         }
       ],
       "review": {
         "specCompliance": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T01:51:09.026Z"
         },
         "codeQuality": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T01:51:09.026Z"
         }
       },
       "retries": {
@@ -1617,7 +1617,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 8,
-      "status": "pending",
+      "status": "passed",
       "dependsOn": [
         "US-021",
         "US-002",
@@ -1638,7 +1638,7 @@
             "npm run compile"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-002",
@@ -1651,7 +1651,7 @@
             "npm run compile"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-003",
@@ -1665,7 +1665,7 @@
             "npm run compile"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-004",
@@ -1681,19 +1681,19 @@
             "npm run build:webview"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         }
       ],
       "review": {
         "specCompliance": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T02:30:48.539Z"
         },
         "codeQuality": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T02:30:48.540Z"
         }
       },
       "retries": {
@@ -1718,7 +1718,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 9,
-      "status": "pending",
+      "status": "passed",
       "dependsOn": [
         "US-022"
       ],
@@ -1734,7 +1734,7 @@
             "npm run build:webview"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-002",
@@ -1747,7 +1747,7 @@
             "npm run build:webview"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-003",
@@ -1763,19 +1763,19 @@
             "npm run build:webview"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         }
       ],
       "review": {
         "specCompliance": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T02:56:18.240Z"
         },
         "codeQuality": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T02:56:18.241Z"
         }
       },
       "retries": {
@@ -1799,7 +1799,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 10,
-      "status": "pending",
+      "status": "passed",
       "dependsOn": [
         "US-023"
       ],
@@ -1815,7 +1815,7 @@
             "npm run build:webview"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-002",
@@ -1830,19 +1830,19 @@
             "npm run build:webview"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         }
       ],
       "review": {
         "specCompliance": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T03:49:25.871Z"
         },
         "codeQuality": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T03:49:25.872Z"
         }
       },
       "retries": {
@@ -1867,7 +1867,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 10,
-      "status": "pending",
+      "status": "passed",
       "dependsOn": [
         "US-023"
       ],
@@ -1886,19 +1886,19 @@
             "npm run build:webview"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         }
       ],
       "review": {
         "specCompliance": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T03:36:20.535Z"
         },
         "codeQuality": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T03:36:20.536Z"
         }
       },
       "retries": {
@@ -1923,7 +1923,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 8,
-      "status": "pending",
+      "status": "passed",
       "dependsOn": [
         "US-021",
         "US-012"
@@ -1944,19 +1944,19 @@
             "npm run build:webview"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         }
       ],
       "review": {
         "specCompliance": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T03:41:12.460Z"
         },
         "codeQuality": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T03:41:12.461Z"
         }
       },
       "retries": {
@@ -1982,7 +1982,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 9,
-      "status": "pending",
+      "status": "passed",
       "dependsOn": [
         "US-026",
         "US-002"
@@ -2000,7 +2000,7 @@
             "npm run compile"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-002",
@@ -2017,7 +2017,7 @@
             "npm run build:webview"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         }
       ],
       "review": {
@@ -2053,7 +2053,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 9,
-      "status": "pending",
+      "status": "in_progress",
       "dependsOn": [
         "US-022",
         "US-016"
@@ -2125,7 +2125,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 9,
-      "status": "pending",
+      "status": "in_progress",
       "dependsOn": [
         "US-022",
         "US-010"
@@ -2266,7 +2266,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 9,
-      "status": "pending",
+      "status": "in_progress",
       "dependsOn": [
         "US-022",
         "US-030",
@@ -2338,7 +2338,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 9,
-      "status": "pending",
+      "status": "passed",
       "dependsOn": [
         "US-020",
         "US-008",
@@ -2357,7 +2357,7 @@
             "npm run compile"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-002",
@@ -2370,7 +2370,7 @@
             "npm run build:webview"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-003",
@@ -2386,7 +2386,7 @@
             "npm run build:webview"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-004",
@@ -2399,19 +2399,19 @@
             "npm run compile"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         }
       ],
       "review": {
         "specCompliance": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T03:45:45.956Z"
         },
         "codeQuality": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T03:45:45.956Z"
         }
       },
       "retries": {
@@ -2436,7 +2436,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 8,
-      "status": "pending",
+      "status": "in_progress",
       "dependsOn": [
         "US-021",
         "US-002"
@@ -2494,7 +2494,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 8,
-      "status": "pending",
+      "status": "in_progress",
       "dependsOn": [
         "US-021",
         "US-009"
@@ -2812,6 +2812,135 @@
         "src/services.ts"
       ],
       "learnings": "mock-vscode-runtime.js needs showWarningMessage added when code uses vscode.window.showWarningMessage. Stub fetch with sinon on globalThis.fetch for HTTP client tests."
+    },
+    {
+      "timestamp": "2026-03-07T01:25:17.127Z",
+      "iteration": "4",
+      "storyId": "US-014",
+      "action": "story_passed",
+      "details": "WikipediaClient with search/getPageContent, HTML stripping, caching. 22 tests.",
+      "filesChanged": [
+        "src/knowledge/wikipedia.ts",
+        "src/test/knowledge/wikipedia.test.ts",
+        "src/services.ts"
+      ]
+    },
+    {
+      "timestamp": "2026-03-07T01:36:11.978Z",
+      "iteration": "4",
+      "storyId": "US-013",
+      "action": "story_passed",
+      "details": "ArxivClient with search, XML parsing, BibTeX gen, rate limiting, caching. 16 tests.",
+      "filesChanged": [
+        "src/knowledge/arxiv.ts",
+        "src/test/knowledge/arxiv.test.ts",
+        "src/services.ts",
+        "package.json"
+      ]
+    },
+    {
+      "timestamp": "2026-03-07T01:42:04.079Z",
+      "iteration": "4",
+      "storyId": "US-015",
+      "action": "story_passed",
+      "details": "NlabClient with getPage/search, cheerio HTML parsing, rate limiting, caching. 23 tests.",
+      "filesChanged": [
+        "src/knowledge/nlab.ts",
+        "src/test/knowledge/nlab.test.ts",
+        "src/services.ts",
+        "package.json"
+      ]
+    },
+    {
+      "timestamp": "2026-03-07T01:51:09.026Z",
+      "iteration": "4",
+      "storyId": "US-021",
+      "action": "story_passed",
+      "details": "MessageBubble, MessageList, MessageInput with KaTeX rendering via markdown-it + markdown-it-texmath. VS Code themed styles. 8 vitest tests.",
+      "filesChanged": [
+        "webview-ui/src/components/MessageBubble.tsx",
+        "webview-ui/src/components/MessageList.tsx",
+        "webview-ui/src/components/MessageInput.tsx",
+        "webview-ui/src/utils/renderMarkdown.ts",
+        "webview-ui/src/components/MessageList.css"
+      ]
+    },
+    {
+      "timestamp": "2026-03-07T02:16:13.846Z",
+      "iteration": "5",
+      "storyId": "US-018",
+      "action": "story_passed",
+      "details": "Chat participant @math with persona system prompt, LLM streaming, configure button fallback.",
+      "filesChanged": [
+        "src/chat/participant.ts",
+        "src/extension.ts",
+        "package.json"
+      ]
+    },
+    {
+      "timestamp": "2026-03-07T02:21:50.608Z",
+      "iteration": "5",
+      "storyId": "US-006",
+      "action": "story_passed",
+      "details": "GoogleProvider with generateContentStream, systemInstruction, error mapping. 15 tests.",
+      "filesChanged": [
+        "src/llm/providers/google.ts",
+        "src/test/llm/providers/google.test.ts",
+        "src/services.ts",
+        "package.json"
+      ]
+    },
+    {
+      "timestamp": "2026-03-07T02:30:48.540Z",
+      "iteration": "5",
+      "storyId": "US-022",
+      "action": "story_passed",
+      "details": "Message protocol, handler registry, send/stream handler, webview hooks (useWebviewMessage, useTreeState, useStreaming). Stop button.",
+      "filesChanged": [
+        "src/webview/protocol.ts",
+        "src/webview/message-handler.ts",
+        "src/webview/handlers/send-handler.ts",
+        "src/webview/panel.ts",
+        "webview-ui/src/hooks/useWebviewMessage.ts",
+        "webview-ui/src/hooks/useTreeState.ts",
+        "webview-ui/src/hooks/useStreaming.ts",
+        "webview-ui/src/components/ResearchTab.tsx"
+      ]
+    },
+    {
+      "timestamp": "2026-03-07T02:33:30.004Z",
+      "iteration": "5",
+      "storyId": "US-016",
+      "action": "story_passed",
+      "details": "EntityDetector (keyword + LLM fallback), RagOrchestrator (parallel queries, dedup, ragStatus). 10 tests. ~220 math terms.",
+      "filesChanged": [
+        "src/knowledge/entity-detector.ts",
+        "src/knowledge/rag-orchestrator.ts",
+        "src/knowledge/math-terms.json",
+        "src/test/knowledge/rag-orchestrator.test.ts",
+        "src/knowledge/types.ts",
+        "src/services.ts",
+        "package.json"
+      ]
+    },
+    {
+      "timestamp": "2026-03-07T04:15:00.000Z",
+      "iteration": 27,
+      "storyId": "US-027",
+      "action": "task_completed",
+      "details": "Implemented multi-agent orchestration (runMultiAgent with Promise.allSettled parallel LLM calls and synthesis), MultiAgentCards React component with CSS grid layout and KaTeX rendering, useMultiAgent hook, send-handler multi-agent branch, and mathAgent.multiAgent.personas setting.",
+      "filesChanged": [
+        "src/chat/multi-agent.ts",
+        "package.json",
+        "webview-ui/src/components/MultiAgentCards.tsx",
+        "webview-ui/src/components/MultiAgentCards.css",
+        "webview-ui/src/hooks/useMultiAgent.ts",
+        "webview-ui/src/components/ResearchTab.tsx",
+        "src/webview/handlers/send-handler.ts",
+        "src/webview/protocol.ts",
+        "webview-ui/src/types.ts"
+      ],
+      "learnings": "Multi-agent orchestration pattern: use Promise.allSettled for parallel persona LLM calls so individual failures don't cancel all; synthesis prompt should explicitly ask for agreement/contradiction resolution"
     }
   ],
   "codebasePatterns": [
@@ -2832,6 +2961,7 @@
     "For mocha on Node 24 with vscode mock: use .mocharc.json with node-option import=./src/test/hooks.mjs (registers custom ESM resolver) + import=tsx/esm; compile first with tsc then run mocha on out/",
     "Use src/test/register.js to mock vscode module in unit tests",
     "WikipediaClient in src/knowledge/wikipedia.ts uses globalThis.fetch for HTTP -- stub with sinon.stub(globalThis, 'fetch') in tests",
-    "mock-vscode-runtime.js window object must include showWarningMessage for code that calls vscode.window.showWarningMessage"
+    "mock-vscode-runtime.js window object must include showWarningMessage for code that calls vscode.window.showWarningMessage",
+    "Multi-agent orchestration in src/chat/multi-agent.ts uses Promise.allSettled for parallel LLM calls; send-handler.ts checks tree.activePersona === 'multi-agent' to branch into multi-agent flow"
   ]
 }
