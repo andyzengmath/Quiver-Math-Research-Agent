@@ -1,33 +1,13 @@
-import React, { useCallback } from 'react'
+import React, { useState, useCallback } from 'react'
 import { renderMathMarkdown } from '../utils/renderMarkdown'
+import { ContextMenu } from './ContextMenu'
 
 export interface MessageBubbleProps {
   readonly role: 'user' | 'assistant'
   readonly content: string
   readonly nodeId?: string
   readonly childCount?: number
-  readonly onFork?: (nodeId: string) => void
-}
-
-function BranchIcon(): React.ReactElement {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 16 16"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
-    >
-      <path
-        d="M5 3a2 2 0 1 0-4 0 2 2 0 0 0 4 0zm0 10a2 2 0 1 0-4 0 2 2 0 0 0 4 0zm10-10a2 2 0 1 0-4 0 2 2 0 0 0 4 0zM3 5v6M3 5c2 0 4 0 5 2s3 4 5 4"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
+  readonly onDeleteBranch?: (nodeId: string) => void
 }
 
 export function MessageBubble({
@@ -35,33 +15,61 @@ export function MessageBubble({
   content,
   nodeId,
   childCount,
-  onFork,
+  onDeleteBranch,
 }: MessageBubbleProps): React.ReactElement {
   const rendered = renderMathMarkdown(content)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
 
-  const handleFork = useCallback(() => {
-    if (nodeId && onFork) {
-      onFork(nodeId)
+  const handleContextMenu = useCallback(
+    (event: React.MouseEvent) => {
+      if (!nodeId || !onDeleteBranch) {
+        return
+      }
+      event.preventDefault()
+      setContextMenu({ x: event.clientX, y: event.clientY })
+    },
+    [nodeId, onDeleteBranch]
+  )
+
+  const handleDelete = useCallback(() => {
+    if (!nodeId || !onDeleteBranch) {
+      return
     }
-  }, [nodeId, onFork])
+
+    const descendantCount = childCount ?? 0
+    if (descendantCount > 0) {
+      const confirmed = window.confirm(
+        `This branch has ${descendantCount} sub-branches. Delete all?`
+      )
+      if (!confirmed) {
+        return
+      }
+    }
+
+    onDeleteBranch(nodeId)
+  }, [nodeId, childCount, onDeleteBranch])
+
+  const handleCloseMenu = useCallback(() => {
+    setContextMenu(null)
+  }, [])
 
   return (
-    <div className={`message-bubble ${role === 'user' ? 'user-message' : 'assistant-message'}`}>
-      {nodeId && onFork && (
-        <button
-          type="button"
-          className="fork-button"
-          onClick={handleFork}
-          title={`Fork from this message${childCount !== undefined && childCount > 0 ? ` (${childCount} branch${childCount === 1 ? '' : 'es'})` : ''}`}
-          aria-label="Fork branch from this message"
-        >
-          <BranchIcon />
-        </button>
-      )}
+    <div
+      className={`message-bubble ${role === 'user' ? 'user-message' : 'assistant-message'}`}
+      onContextMenu={handleContextMenu}
+    >
       <div
         className="message-content"
         dangerouslySetInnerHTML={{ __html: rendered }}
       />
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          items={[{ label: 'Delete branch', onClick: handleDelete }]}
+          onClose={handleCloseMenu}
+        />
+      )}
     </div>
   )
 }

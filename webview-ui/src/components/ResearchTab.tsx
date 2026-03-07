@@ -1,11 +1,33 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
-import { MessageList, type Message, type BranchPoint } from './MessageList'
+import { MessageList, type Message } from './MessageList'
 import { MessageInput } from './MessageInput'
 import { useWebviewMessage } from '../hooks/useWebviewMessage'
 import { useTreeState } from '../hooks/useTreeState'
 import { useStreaming } from '../hooks/useStreaming'
-import type { DialogueNode } from '../types'
 import './MessageList.css'
+
+function countDescendants(
+  nodes: Readonly<Record<string, { readonly children: ReadonlyArray<string> }>>,
+  nodeId: string
+): number {
+  const node = nodes[nodeId]
+  if (!node) {
+    return 0
+  }
+  let count = 0
+  const stack = [...node.children]
+  while (stack.length > 0) {
+    const childId = stack.pop()!
+    count += 1
+    const child = nodes[childId]
+    if (child) {
+      for (const grandchildId of child.children) {
+        stack.push(grandchildId)
+      }
+    }
+  }
+  return count
+}
 
 export function ResearchTab(): React.ReactElement {
   const { lastMessage, postMessage } = useWebviewMessage()
@@ -28,16 +50,9 @@ export function ResearchTab(): React.ReactElement {
     postMessage({ type: 'stopStream' })
   }, [postMessage])
 
-  const handleFork = useCallback(
+  const handleDeleteBranch = useCallback(
     (nodeId: string) => {
-      postMessage({ type: 'fork', nodeId })
-    },
-    [postMessage]
-  )
-
-  const handleSwitchBranch = useCallback(
-    (nodeId: string) => {
-      postMessage({ type: 'switchBranch', nodeId })
+      postMessage({ type: 'deleteBranch', nodeId })
     },
     [postMessage]
   )
@@ -48,6 +63,7 @@ export function ResearchTab(): React.ReactElement {
       id: m.id,
       role: m.role,
       content: m.content,
+      childCount: tree ? countDescendants(tree.nodes, m.id) : 0,
     }))
 
     // If currently streaming, add/replace the streaming assistant message
@@ -60,6 +76,7 @@ export function ResearchTab(): React.ReactElement {
           id: streamingNodeId,
           role: 'assistant',
           content: streamingText,
+          childCount: 0,
         }
       } else {
         // Append as a new message
@@ -67,73 +84,17 @@ export function ResearchTab(): React.ReactElement {
           id: streamingNodeId,
           role: 'assistant',
           content: streamingText,
+          childCount: 0,
         })
       }
     }
 
     return msgs
-  }, [treeMessages, streamingNodeId, streamingText])
-
-  // Compute branch points: for each node in the active path that has multiple children,
-  // show BranchCards for the non-active siblings
-  const branchPoints = useMemo<ReadonlyArray<BranchPoint>>(() => {
-    if (!tree) {
-      return []
-    }
-
-    const activePath = tree.activePath
-    const activePathSet = new Set(activePath)
-    const result: BranchPoint[] = []
-
-    for (const nodeId of activePath) {
-      const node: DialogueNode | undefined = tree.nodes[nodeId]
-      if (!node || node.children.length <= 1) {
-        continue
-      }
-
-      // This node has multiple children -- find siblings (non-active children)
-      const siblings: BranchPoint['siblings'][number][] = []
-      for (const childId of node.children) {
-        const childNode: DialogueNode | undefined = tree.nodes[childId]
-        if (!childNode) {
-          continue
-        }
-        // Skip system nodes with empty content (fork placeholders)
-        const isOnActivePath = activePathSet.has(childId)
-        const previewText = childNode.content || `(${childNode.role})`
-
-        siblings.push({
-          nodeId: childId,
-          previewText,
-          childCount: childNode.children.length,
-          isActive: isOnActivePath,
-        })
-      }
-
-      // Only show branch cards if there are non-active siblings
-      const hasNonActive = siblings.some((s) => !s.isActive)
-      if (hasNonActive) {
-        result.push({
-          afterNodeId: nodeId,
-          siblings,
-        })
-      }
-    }
-
-    return result
-  }, [tree])
-
-  const nodes = tree?.nodes ?? undefined
+  }, [treeMessages, tree, streamingNodeId, streamingText])
 
   return (
     <div className="research-tab">
-      <MessageList
-        messages={displayMessages}
-        nodes={nodes}
-        onFork={handleFork}
-        onSwitchBranch={handleSwitchBranch}
-        branchPoints={branchPoints}
-      />
+      <MessageList messages={displayMessages} onDeleteBranch={handleDeleteBranch} />
       <div className="input-area">
         {isStreaming && (
           <button

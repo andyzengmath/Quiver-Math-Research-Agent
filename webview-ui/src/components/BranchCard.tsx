@@ -1,45 +1,76 @@
-import React, { useCallback } from 'react'
+import React, { useState, useCallback } from 'react'
+import { ContextMenu } from './ContextMenu'
 
 export interface BranchCardProps {
   readonly nodeId: string
-  readonly previewText: string
-  readonly childCount: number
+  readonly label: string
   readonly isActive: boolean
-  readonly onClick: (nodeId: string) => void
-}
-
-function truncateText(text: string, maxLength: number): string {
-  if (text.length <= maxLength) {
-    return text
-  }
-  return text.slice(0, maxLength) + '...'
+  readonly childCount: number
+  readonly onSwitch: (nodeId: string) => void
+  readonly onDeleteBranch: (nodeId: string) => void
 }
 
 export function BranchCard({
   nodeId,
-  previewText,
-  childCount,
+  label,
   isActive,
-  onClick,
+  childCount,
+  onSwitch,
+  onDeleteBranch,
 }: BranchCardProps): React.ReactElement {
-  const handleClick = useCallback(() => {
-    onClick(nodeId)
-  }, [nodeId, onClick])
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
 
-  const displayText = truncateText(previewText.split('\n')[0] || '(empty)', 50)
+  const handleContextMenu = useCallback(
+    (event: React.MouseEvent) => {
+      event.preventDefault()
+      setContextMenu({ x: event.clientX, y: event.clientY })
+    },
+    []
+  )
+
+  const handleDelete = useCallback(() => {
+    if (childCount > 0) {
+      const confirmed = window.confirm(
+        `This branch has ${childCount} sub-branches. Delete all?`
+      )
+      if (!confirmed) {
+        return
+      }
+    }
+
+    onDeleteBranch(nodeId)
+  }, [nodeId, childCount, onDeleteBranch])
+
+  const handleCloseMenu = useCallback(() => {
+    setContextMenu(null)
+  }, [])
+
+  const handleClick = useCallback(() => {
+    onSwitch(nodeId)
+  }, [nodeId, onSwitch])
 
   return (
-    <button
-      type="button"
-      className={`branch-card ${isActive ? 'branch-card-active' : 'branch-card-inactive'}`}
+    <div
+      className={`branch-card ${isActive ? 'branch-card-active' : ''}`}
       onClick={handleClick}
-      title={isActive ? 'Current branch' : 'Switch to this branch'}
-      aria-label={`Branch: ${displayText}`}
+      onContextMenu={handleContextMenu}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          handleClick()
+        }
+      }}
     >
-      <span className="branch-card-preview">{displayText}</span>
-      {childCount > 0 && (
-        <span className="branch-card-badge">{childCount}</span>
+      <span className="branch-card-label">{label}</span>
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          items={[{ label: 'Delete branch', onClick: handleDelete }]}
+          onClose={handleCloseMenu}
+        />
       )}
-    </button>
+    </div>
   )
 }
