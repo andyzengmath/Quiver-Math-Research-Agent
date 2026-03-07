@@ -109,6 +109,16 @@
             ]
           }
         },
+        "mathAgent.rag.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable RAG (Retrieval-Augmented Generation) for enriching conversations with knowledge from arXiv, Wikipedia, and nLab"
+        },
+        "mathAgent.rag.cacheTtlHours": {
+          "type": "number",
+          "default": 24,
+          "description": "Time-to-live in hours for cached knowledge query results"
+        },
         "mathAgent.lean4.enabled": {
           "type": "boolean",
           "default": false,

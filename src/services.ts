@@ -15,6 +15,8 @@ import { Lean4Service } from './lean4/service'
 import { WikipediaClient } from './knowledge/wikipedia'
 import { ArxivClient } from './knowledge/arxiv'
 import { NlabClient } from './knowledge/nlab'
+import { EntityDetector } from './knowledge/entity-detector'
+import { RagOrchestrator } from './knowledge/rag-orchestrator'
 
 export interface Services {
   readonly personaManager: PersonaManager
@@ -27,6 +29,8 @@ export interface Services {
   readonly storage: StorageService
   readonly contextBuilder: ContextBuilder
   readonly lean4: Lean4Service
+  readonly entityDetector: EntityDetector
+  readonly ragOrchestrator: RagOrchestrator
 }
 
 export function createServices(context: vscode.ExtensionContext): Services {
@@ -64,6 +68,13 @@ export function createServices(context: vscode.ExtensionContext): Services {
   const wikipedia = new WikipediaClient(knowledgeCache)
   const arxivClient = new ArxivClient(knowledgeCache)
   const nlabClient = new NlabClient(knowledgeCache)
+  const entityDetector = new EntityDetector(llm)
+  const ragOrchestrator = new RagOrchestrator(
+    arxivClient,
+    wikipedia,
+    nlabClient,
+    entityDetector
+  )
 
   return {
     personaManager,
@@ -76,5 +87,7 @@ export function createServices(context: vscode.ExtensionContext): Services {
     storage,
     contextBuilder,
     lean4,
+    entityDetector,
+    ragOrchestrator,
   }
 }

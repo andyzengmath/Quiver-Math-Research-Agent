@@ -18,3 +18,29 @@ export interface CacheEntry {
 }
 
 export type KnowledgeCacheData = Record<string, CacheEntry>
+
+/**
+ * Interface for knowledge source clients.
+ * Implemented by ArxivClient, WikipediaClient, and NlabClient.
+ */
+export interface KnowledgeSourceClient {
+  search(query: string, maxResults?: number): Promise<Citation[]>
+}
+
+/**
+ * Status of a single knowledge source query.
+ */
+export type SourceStatus = 'success' | 'failed' | 'skipped'
+
+/**
+ * Result of RAG enrichment including per-source status.
+ */
+export interface RagStatus {
+  readonly enabled: boolean
+  readonly sources: {
+    readonly arxiv: SourceStatus
+    readonly wikipedia: SourceStatus
+    readonly nlab: SourceStatus
+  }
+  readonly citations: Citation[]
+}
