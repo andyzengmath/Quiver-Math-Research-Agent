@@ -974,7 +974,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 6,
-      "status": "pending",
+      "status": "passed",
       "dependsOn": [
         "US-017"
       ],
@@ -992,7 +992,7 @@
             "npm run test:unit -- --grep 'WikipediaClient'"
           ],
           "testFirst": true,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-002",
@@ -1006,7 +1006,7 @@
             "npm run test:unit -- --grep 'WikipediaClient'"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         }
       ],
       "review": {
@@ -2796,6 +2796,22 @@
         "src/extension.ts"
       ],
       "learnings": "VS Code LM API uses LanguageModelChatMessage static methods for role mapping."
+    },
+    {
+      "timestamp": "2026-03-06T23:00:00.000Z",
+      "iteration": 14,
+      "storyId": "US-014",
+      "action": "task_completed",
+      "details": "WikipediaClient with search() and getPageContent() methods. Uses MediaWiki API, caches via KnowledgeCache, strips HTML from snippets, truncates to 500 chars. 22 tests covering happy path, caching, error handling, and edge cases.",
+      "filesChanged": [
+        "src/knowledge/wikipedia.ts",
+        "src/test/knowledge/wikipedia.test.ts",
+        "src/test/knowledge/fixtures/wikipedia-search.json",
+        "src/test/knowledge/fixtures/wikipedia-page.json",
+        "src/test/mock-vscode-runtime.js",
+        "src/services.ts"
+      ],
+      "learnings": "mock-vscode-runtime.js needs showWarningMessage added when code uses vscode.window.showWarningMessage. Stub fetch with sinon on globalThis.fetch for HTTP client tests."
     }
   ],
   "codebasePatterns": [
@@ -2814,6 +2830,8 @@
     "LLM types (LlmMessage, LlmOptions, LlmProvider, LlmAuthError, LlmRateLimitError) in src/llm/types.ts",
     "VS Code SecretStorage accessed via LlmService.getApiKey/setApiKey for secure API key management",
     "For mocha on Node 24 with vscode mock: use .mocharc.json with node-option import=./src/test/hooks.mjs (registers custom ESM resolver) + import=tsx/esm; compile first with tsc then run mocha on out/",
-    "Use src/test/register.js to mock vscode module in unit tests"
+    "Use src/test/register.js to mock vscode module in unit tests",
+    "WikipediaClient in src/knowledge/wikipedia.ts uses globalThis.fetch for HTTP -- stub with sinon.stub(globalThis, 'fetch') in tests",
+    "mock-vscode-runtime.js window object must include showWarningMessage for code that calls vscode.window.showWarningMessage"
   ]
 }

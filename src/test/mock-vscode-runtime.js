@@ -46,6 +46,7 @@ module.exports = {
   },
   window: {
     showInformationMessage: () => Promise.resolve(undefined),
+    showWarningMessage: () => Promise.resolve(undefined),
     showErrorMessage: () => Promise.resolve(undefined),
   },
   commands: {

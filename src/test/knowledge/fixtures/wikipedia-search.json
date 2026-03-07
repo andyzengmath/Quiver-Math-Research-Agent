@@ -1,0 +1,32 @@
+{
+  "batchcomplete": "",
+  "continue": {
+    "sroffset": 2,
+    "continue": "-||"
+  },
+  "query": {
+    "searchinfo": {
+      "totalhits": 42
+    },
+    "search": [
+      {
+        "ns": 0,
+        "title": "Derived category",
+        "pageid": 1234567,
+        "size": 15420,
+        "wordcount": 1892,
+        "snippet": "In <span class=\"searchmatch\">mathematics</span>, the <span class=\"searchmatch\">derived</span> <span class=\"searchmatch\">category</span> D(A) of an abelian category A is a construction of homological algebra introduced to refine and in a certain sense simplify the theory of derived functors.",
+        "timestamp": "2025-11-15T10:00:00Z"
+      },
+      {
+        "ns": 0,
+        "title": "Derived functor",
+        "pageid": 7654321,
+        "size": 22100,
+        "wordcount": 2710,
+        "snippet": "In <span class=\"searchmatch\">mathematics</span>, the <span class=\"searchmatch\">derived</span> functors of a functor are a systematic way to compute the obstructions to that functor being exact.",
+        "timestamp": "2025-10-20T08:30:00Z"
+      }
+    ]
+  }
+}

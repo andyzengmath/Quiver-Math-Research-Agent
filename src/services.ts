@@ -11,12 +11,14 @@ import { OpenAiProvider } from './llm/providers/openai'
 import { StorageService } from './dialogue/storage'
 import { ContextBuilder } from './dialogue/context'
 import { Lean4Service } from './lean4/service'
+import { WikipediaClient } from './knowledge/wikipedia'
 
 export interface Services {
   readonly personaManager: PersonaManager
   readonly treeManager: TreeManager
   readonly llm: LlmService
   readonly knowledgeCache: KnowledgeCache
+  readonly wikipedia: WikipediaClient
   readonly storage: StorageService
   readonly contextBuilder: ContextBuilder
   readonly lean4: Lean4Service
@@ -53,11 +55,14 @@ export function createServices(context: vscode.ExtensionContext): Services {
     },
   })
 
+  const wikipedia = new WikipediaClient(knowledgeCache)
+
   return {
     personaManager,
     treeManager: new TreeManager(),
     llm,
     knowledgeCache,
+    wikipedia,
     storage,
     contextBuilder,
     lean4,
