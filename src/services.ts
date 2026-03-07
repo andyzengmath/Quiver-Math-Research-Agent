@@ -12,6 +12,7 @@ import { StorageService } from './dialogue/storage'
 import { ContextBuilder } from './dialogue/context'
 import { Lean4Service } from './lean4/service'
 import { WikipediaClient } from './knowledge/wikipedia'
+import { ArxivClient } from './knowledge/arxiv'
 
 export interface Services {
   readonly personaManager: PersonaManager
@@ -22,6 +23,7 @@ export interface Services {
   readonly storage: StorageService
   readonly contextBuilder: ContextBuilder
   readonly lean4: Lean4Service
+  readonly arxivClient: ArxivClient
 }
 
 export function createServices(context: vscode.ExtensionContext): Services {
@@ -56,6 +58,7 @@ export function createServices(context: vscode.ExtensionContext): Services {
   })
 
   const wikipedia = new WikipediaClient(knowledgeCache)
+  const arxivClient = new ArxivClient(knowledgeCache)
 
   return {
     personaManager,
@@ -66,5 +69,6 @@ export function createServices(context: vscode.ExtensionContext): Services {
     storage,
     contextBuilder,
     lean4,
+    arxivClient,
   }
 }

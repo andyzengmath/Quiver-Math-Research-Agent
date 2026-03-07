@@ -84,12 +84,20 @@
                 "type": "array",
                 "items": {
                   "type": "string",
-                  "enum": ["arxiv", "nlab", "wikipedia"]
+                  "enum": [
+                    "arxiv",
+                    "nlab",
+                    "wikipedia"
+                  ]
                 },
                 "description": "Preferred knowledge sources for this persona"
               }
             },
-            "required": ["id", "label", "systemPrompt"]
+            "required": [
+              "id",
+              "label",
+              "systemPrompt"
+            ]
           }
         },
         "mathAgent.lean4.enabled": {
@@ -135,6 +143,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
+    "fast-xml-parser": "^5.4.2",
     "openai": "^4.77.0",
     "uuid": "^13.0.0"
   }
