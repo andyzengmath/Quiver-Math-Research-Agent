@@ -19,6 +19,18 @@ export interface DialogueNode {
   readonly metadata: NodeMetadata
 }
 
+export interface AttachedPaper {
+  readonly id: string
+  readonly source: 'arxiv' | 'local-pdf' | 'local-tex'
+  readonly title: string
+  readonly arxivId?: string
+  readonly filePath?: string
+  readonly extractedText: string
+  readonly selectedSections?: ReadonlyArray<string>
+  readonly scope: 'global' | 'branch'
+  readonly branchId?: string
+}
+
 export interface DialogueTree {
   readonly id: string
   readonly title: string
@@ -28,6 +40,7 @@ export interface DialogueTree {
   readonly activePersona?: string
   readonly createdAt: number
   readonly updatedAt: number
+  readonly attachedPapers?: ReadonlyArray<AttachedPaper>
 }
 
 export interface PersonaConfig {
@@ -108,6 +121,8 @@ export type WebviewToHost =
   | { readonly type: 'setModel'; readonly provider: string; readonly model: string }
   | { readonly type: 'requestState' }
   | { readonly type: 'addPaper' }
+  | { readonly type: 'removePaper'; readonly paperId: string }
+  | { readonly type: 'setPaperScope'; readonly paperId: string; readonly scope: 'global' | 'branch' }
   | { readonly type: 'verifyLean4'; readonly nodeId: string }
   | { readonly type: 'retryLean4'; readonly nodeId: string; readonly attempt: number }
   | { readonly type: 'getTexFiles' }

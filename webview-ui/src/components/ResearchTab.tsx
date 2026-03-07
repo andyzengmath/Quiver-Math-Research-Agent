@@ -4,6 +4,7 @@ import { MessageInput } from './MessageInput'
 import { Breadcrumb, type BreadcrumbSegment } from './Breadcrumb'
 import { MultiAgentCards } from './MultiAgentCards'
 import { RagToggle } from './RagToggle'
+import { AttachedPapers } from './AttachedPapers'
 import { useWebviewMessage } from '../hooks/useWebviewMessage'
 import { useTreeState } from '../hooks/useTreeState'
 import { useStreaming } from '../hooks/useStreaming'
@@ -175,6 +176,24 @@ export function ResearchTab(): React.ReactElement {
     [postMessage]
   )
 
+  const handleAddPaper = useCallback(() => {
+    postMessage({ type: 'addPaper' })
+  }, [postMessage])
+
+  const handleRemovePaper = useCallback(
+    (paperId: string) => {
+      postMessage({ type: 'removePaper', paperId })
+    },
+    [postMessage]
+  )
+
+  const handleSetPaperScope = useCallback(
+    (paperId: string, scope: 'global' | 'branch') => {
+      postMessage({ type: 'setPaperScope', paperId, scope })
+    },
+    [postMessage]
+  )
+
   const handlePromoteToBranch = useCallback(
     (_personaId: string, content: string) => {
       // Fork from the last node on the active path, then send the promoted content
@@ -248,6 +267,10 @@ export function ResearchTab(): React.ReactElement {
 
   const hasSiblings = siblings.length > 1
 
+  const attachedPapers = useMemo(() => {
+    return tree?.attachedPapers ?? []
+  }, [tree])
+
   return (
     <div className="research-tab" ref={messageListContainerRef}>
       <div className="research-tab__header-bar">
@@ -286,6 +309,12 @@ export function ResearchTab(): React.ReactElement {
           )}
         </div>
       )}
+      <AttachedPapers
+        papers={attachedPapers}
+        onAddPaper={handleAddPaper}
+        onRemovePaper={handleRemovePaper}
+        onSetScope={handleSetPaperScope}
+      />
       <MessageList
         messages={displayMessages}
         ragStatusByNode={ragStatusByNode}

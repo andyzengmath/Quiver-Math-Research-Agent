@@ -15,6 +15,8 @@ export type WebviewToHost =
   | { readonly type: 'setModel'; readonly provider: string; readonly model: string }
   | { readonly type: 'requestState' }
   | { readonly type: 'addPaper' }
+  | { readonly type: 'removePaper'; readonly paperId: string }
+  | { readonly type: 'setPaperScope'; readonly paperId: string; readonly scope: 'global' | 'branch' }
   | { readonly type: 'verifyLean4'; readonly nodeId: string }
   | { readonly type: 'retryLean4'; readonly nodeId: string; readonly attempt: number }
   | { readonly type: 'getTexFiles' }

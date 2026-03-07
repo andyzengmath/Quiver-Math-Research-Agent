@@ -5,6 +5,7 @@ import { HostToWebview, WebviewToHost } from './protocol'
 import { MessageHandlerRegistry } from './message-handler'
 import { registerSendHandler } from './handlers/send-handler'
 import { registerBranchHandler } from './handlers/branch-handler'
+import { registerPaperHandler } from './handlers/paper-handler'
 
 export class MathResearchPanel {
   public static readonly viewType = 'mathAgent.researchPanel'
@@ -76,6 +77,7 @@ export class MathResearchPanel {
     // Register feature handlers
     registerSendHandler(this.registry)
     registerBranchHandler(this.registry)
+    registerPaperHandler(this.registry)
   }
 
   private registerBuiltInHandlers(): void {

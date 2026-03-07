@@ -32,15 +32,6 @@
         "name": "math",
         "fullName": "Math Research Agent",
         "description": "Ask math questions, explore proofs, search literature",
-        "isSticky": true
-      }
-    ],
-    "chatParticipants": [
-      {
-        "id": "math-research-agent.math",
-        "name": "math",
-        "fullName": "Math Research Agent",
-        "description": "Ask math questions, explore proofs, search literature",
         "isSticky": true,
         "commands": [
           {
@@ -184,6 +175,7 @@
     "@testing-library/react": "^16.3.2",
     "@types/markdown-it": "^14.1.2",
     "@types/mocha": "^10.0.10",
+    "@types/pdf-parse": "^1.1.5",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/sinon": "^21.0.0",
@@ -209,11 +201,12 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.0",
     "@anthropic-ai/sdk": "^0.78.0",
+    "@google/generative-ai": "^0.24.0",
     "cheerio": "^1.2.0",
     "fast-xml-parser": "^5.4.2",
     "openai": "^4.77.0",
+    "pdf-parse": "^2.4.5",
     "uuid": "^13.0.0"
   }
 }

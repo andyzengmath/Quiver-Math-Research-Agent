@@ -5,7 +5,7 @@
   "prdPath": "tasks/prd-math-research-agent.md",
   "designPath": "docs/plans/2026-03-06-math-research-agent-design.md",
   "createdAt": "2026-03-06T12:00:00Z",
-  "updatedAt": "2026-03-07T04:14:10.371Z",
+  "updatedAt": "2026-03-07T04:26:28.696Z",
   "fileConflicts": [
     {
       "file": "src/knowledge/types.ts",
@@ -2091,14 +2091,14 @@
       ],
       "review": {
         "specCompliance": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T04:26:28.696Z"
         },
         "codeQuality": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T04:26:28.696Z"
         }
       },
       "retries": {
@@ -2125,7 +2125,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 9,
-      "status": "in_progress",
+      "status": "passed",
       "dependsOn": [
         "US-022",
         "US-010"
@@ -2145,7 +2145,7 @@
             "npm run compile"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-002",
@@ -2159,7 +2159,7 @@
             "npm run build:webview"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         }
       ],
       "review": {
@@ -2963,6 +2963,25 @@
         "webview-ui/src/hooks/useRagStatus.ts"
       ],
       "learnings": "Two different RagStatus types exist: knowledge/types.ts (enabled, sources map, citations array) and webview protocol (state enum, simplified citations). The send-handler converts between them using toWebviewRagStatus(). RAG failures are gracefully handled and should never block the main message flow."
+    },
+    {
+      "timestamp": "2026-03-07T08:00:00.000Z",
+      "iteration": 29,
+      "storyId": "US-029",
+      "action": "task_completed",
+      "details": "Implemented paper attachment logic (PaperManager for PDF/TeX/arXiv), paper-handler for webview-to-host messaging (addPaper/removePaper/setPaperScope), and AttachedPapers sidebar component with collapsible section, source/scope badges, and right-click context menu. Wired into panel.ts and ResearchTab.",
+      "filesChanged": [
+        "src/papers/manager.ts",
+        "src/webview/handlers/paper-handler.ts",
+        "src/webview/panel.ts",
+        "src/webview/protocol.ts",
+        "webview-ui/src/types.ts",
+        "webview-ui/src/components/AttachedPapers.tsx",
+        "webview-ui/src/components/AttachedPapers.css",
+        "webview-ui/src/components/ResearchTab.tsx",
+        "package.json"
+      ],
+      "learnings": "pdf-parse v2 uses class-based API (new PDFParse({data}) then parser.getText()) instead of the v1 function-based API. The AttachedPaper type already exists in dialogue/types.ts but needs mirroring in webview-ui/src/types.ts with readonly arrays. Tree mutations (adding attachedPapers) work by getting the tree from TreeManager by reference and updating fields directly."
     }
   ],
   "codebasePatterns": [
@@ -2986,6 +3005,8 @@
     "mock-vscode-runtime.js window object must include showWarningMessage for code that calls vscode.window.showWarningMessage",
     "Multi-agent orchestration in src/chat/multi-agent.ts uses Promise.allSettled for parallel LLM calls; send-handler.ts checks tree.activePersona === 'multi-agent' to branch into multi-agent flow",
     "RAG status uses two-layer types: knowledge/types.ts RagStatus (enabled, sources map, citations) for extension host, and webview protocol RagStatus (state enum, simplified citations) for webview; send-handler.ts converts between them via toWebviewRagStatus()",
-    "Per-node webview state (ragStatus, lean4Result) tracked via custom hooks (useRagStatus, etc.) that listen on lastMessage and maintain a Map<nodeId, status>"
+    "Per-node webview state (ragStatus, lean4Result) tracked via custom hooks (useRagStatus, etc.) that listen on lastMessage and maintain a Map<nodeId, status>",
+    "pdf-parse v2 uses class-based API: new PDFParse({data: Uint8Array}) then parser.getText() returns TextResult with .text property; call parser.destroy() when done",
+    "Paper attachment handlers (addPaper/removePaper/setPaperScope) registered in paper-handler.ts; tree.attachedPapers is an optional AttachedPaper[] on DialogueTree persisted via storage.saveTree()"
   ]
 }
