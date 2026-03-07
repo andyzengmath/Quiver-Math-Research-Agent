@@ -25,6 +25,7 @@ export interface DialogueTree {
   readonly rootId: string
   readonly activePath: ReadonlyArray<string>
   readonly nodes: Readonly<Record<string, DialogueNode>>
+  readonly activePersona?: string
   readonly createdAt: number
   readonly updatedAt: number
 }

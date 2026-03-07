@@ -40,8 +40,10 @@ export function registerSendHandler(registry: MessageHandlerRegistry): void {
     // Post updated tree state to webview
     panel.postToWebview({ type: 'treeState', tree })
 
-    // Build LLM context from the conversation path
-    const llmMessages = contextBuilder.build(tree, userNode.id)
+    // Build LLM context from the conversation path, using active persona if set
+    const llmMessages = contextBuilder.build(tree, userNode.id, {
+      persona: tree.activePersona,
+    })
 
     // Create cancellation token for streaming
     const cts = new vscode.CancellationTokenSource()

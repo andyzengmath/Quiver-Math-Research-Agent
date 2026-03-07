@@ -25,6 +25,7 @@ export interface DialogueTree {
   rootId: string
   activePath: string[]
   nodes: Record<string, DialogueNode>
+  activePersona?: string
   createdAt: number
   updatedAt: number
   attachedPapers?: AttachedPaper[]

@@ -4,7 +4,7 @@ import { DialogueTree } from '../dialogue/types'
 import { HostToWebview, WebviewToHost } from './protocol'
 import { MessageHandlerRegistry } from './message-handler'
 import { registerSendHandler } from './handlers/send-handler'
-import { registerBranchHandlers } from './handlers/branch-handler'
+import { registerPersonaHandlers } from './handlers/persona-handler'
 
 export class MathResearchPanel {
   public static readonly viewType = 'mathAgent.researchPanel'
@@ -75,7 +75,7 @@ export class MathResearchPanel {
 
     // Register feature handlers
     registerSendHandler(this.registry)
-    registerBranchHandlers(this.registry)
+    registerPersonaHandlers(this.registry)
   }
 
   private registerBuiltInHandlers(): void {

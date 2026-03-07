@@ -6,6 +6,32 @@
   overflow: hidden;
 }
 
+/* Research Tab Header (persona selector) */
+.research-tab-header {
+  display: flex;
+  align-items: center;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--vscode-panel-border, #444);
+  flex-shrink: 0;
+}
+
+/* Persona Selector Dropdown */
+.persona-selector {
+  background-color: var(--vscode-dropdown-background, #3c3c3c);
+  color: var(--vscode-dropdown-foreground, #cccccc);
+  border: 1px solid var(--vscode-dropdown-border, #555);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-family: var(--vscode-font-family, sans-serif);
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+}
+
+.persona-selector:focus {
+  border-color: var(--vscode-focusBorder, #007acc);
+}
+
 .message-list {
   display: flex;
   flex-direction: column;
