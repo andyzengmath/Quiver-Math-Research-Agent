@@ -27,8 +27,14 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(openPanelCommand, configureProviderCommand)
 
-  // Register the @math chat participant
-  registerChatParticipant(context, services.llm, services.personaManager)
+  // Register the @math chat participant with slash commands
+  registerChatParticipant(context, {
+    llmService: services.llm,
+    personaManager: services.personaManager,
+    contextBuilder: services.contextBuilder,
+    ragOrchestrator: services.ragOrchestrator,
+    arxivClient: services.arxivClient,
+  })
 
   // Launch onboarding wizard on first activation if no provider is configured.
   const onboardingComplete = context.globalState.get<boolean>('mathAgent.onboardingComplete')

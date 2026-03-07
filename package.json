@@ -35,6 +35,29 @@
         "isSticky": true
       }
     ],
+    "chatParticipants": [
+      {
+        "id": "math-research-agent.math",
+        "name": "math",
+        "fullName": "Math Research Agent",
+        "description": "Ask math questions, explore proofs, search literature",
+        "isSticky": true,
+        "commands": [
+          {
+            "name": "search",
+            "description": "Search arXiv, Wikipedia, and nLab"
+          },
+          {
+            "name": "arxiv",
+            "description": "Search arXiv papers"
+          },
+          {
+            "name": "studio",
+            "description": "Open Math Research Studio"
+          }
+        ]
+      }
+    ],
     "configuration": {
       "title": "Math Research Agent",
       "properties": {
