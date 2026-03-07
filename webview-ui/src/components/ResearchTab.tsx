@@ -1,44 +1,131 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MessageList, type Message } from './MessageList'
 import { MessageInput } from './MessageInput'
-import { PersonaSelector, type PersonaOption } from './PersonaSelector'
+import { Breadcrumb, type BreadcrumbSegment } from './Breadcrumb'
 import { useWebviewMessage } from '../hooks/useWebviewMessage'
 import { useTreeState } from '../hooks/useTreeState'
 import { useStreaming } from '../hooks/useStreaming'
-import type { PersonaConfig } from '../types'
+import type { DialogueNode, DialogueTree } from '../types'
 import './MessageList.css'
+
+const MAX_VISIBLE_SIBLINGS = 5
+
+interface SiblingInfo {
+  readonly nodeId: string
+  readonly label: string
+  readonly isActive: boolean
+}
+
+function buildBreadcrumbPath(tree: DialogueTree): ReadonlyArray<BreadcrumbSegment> {
+  const segments: BreadcrumbSegment[] = []
+
+  for (const nodeId of tree.activePath) {
+    const node: DialogueNode | undefined = tree.nodes[nodeId]
+    if (!node) {
+      continue
+    }
+    // Skip system nodes (root)
+    if (node.role === 'system') {
+      continue
+    }
+    const label = node.content.length > 0 ? node.content : `(${node.role})`
+    segments.push({ nodeId: node.id, label })
+  }
+
+  return segments
+}
+
+function findBranchPointSiblings(tree: DialogueTree): ReadonlyArray<SiblingInfo> {
+  // Find the first branch point in the active path where a parent has >1 children
+  // We look for nodes whose parent has multiple children (i.e., there are sibling branches)
+  const activePathSet = new Set(tree.activePath)
+
+  for (const nodeId of tree.activePath) {
+    const node: DialogueNode | undefined = tree.nodes[nodeId]
+    if (!node || !node.parentId) {
+      continue
+    }
+
+    const parent = tree.nodes[node.parentId]
+    if (!parent || parent.children.length <= 1) {
+      continue
+    }
+
+    // This node has siblings -- return info about all siblings
+    return parent.children.map((childId) => {
+      const childNode = tree.nodes[childId]
+      const content = childNode?.content ?? ''
+      const label = content.length > 0 ? content : `(${childNode?.role ?? 'unknown'})`
+      return {
+        nodeId: childId,
+        label,
+        isActive: activePathSet.has(childId),
+      }
+    })
+  }
+
+  return []
+}
 
 export function ResearchTab(): React.ReactElement {
   const { lastMessage, postMessage } = useWebviewMessage()
   const { tree, messages: treeMessages } = useTreeState(lastMessage)
   const { streamingNodeId, streamingText, isStreaming } = useStreaming(lastMessage)
 
-  const [personas, setPersonas] = useState<ReadonlyArray<PersonaConfig>>([])
+  const [expandedSiblings, setExpandedSiblings] = useState(false)
+
+  // Scroll position storage per branch (keyed by last nodeId in activePath)
+  const scrollPositionsRef = useRef<Map<string, number>>(new Map())
+  const messageListContainerRef = useRef<HTMLDivElement>(null)
+  const previousBranchKeyRef = useRef<string | null>(null)
 
   // On mount, request current state from extension host
   useEffect(() => {
     postMessage({ type: 'requestState' })
   }, [postMessage])
 
-  // Listen for personas message
-  useEffect(() => {
-    if (lastMessage && lastMessage.type === 'personas') {
-      setPersonas(lastMessage.personas)
+  // Compute branch key from active path
+  const branchKey = useMemo(() => {
+    if (!tree || tree.activePath.length === 0) {
+      return null
     }
-  }, [lastMessage])
+    return tree.activePath[tree.activePath.length - 1]
+  }, [tree])
 
-  const selectedPersonaId = tree?.activePersona ?? ''
+  // Save/restore scroll position when branch changes
+  useEffect(() => {
+    const container = messageListContainerRef.current
+    if (!container) {
+      return
+    }
 
-  const personaOptions = useMemo<ReadonlyArray<PersonaOption>>(() => {
-    return personas.map((p) => ({ id: p.id, label: p.label }))
-  }, [personas])
+    const prevKey = previousBranchKeyRef.current
+    // Save scroll position for previous branch
+    if (prevKey) {
+      const scrollableEl = container.querySelector('.message-list')
+      if (scrollableEl) {
+        scrollPositionsRef.current.set(prevKey, scrollableEl.scrollTop)
+      }
+    }
 
-  const handlePersonaSelect = useCallback(
-    (id: string) => {
-      postMessage({ type: 'setPersona', personaId: id })
-    },
-    [postMessage]
-  )
+    // Restore scroll position for new branch
+    if (branchKey) {
+      const savedScroll = scrollPositionsRef.current.get(branchKey)
+      if (savedScroll !== undefined) {
+        requestAnimationFrame(() => {
+          const scrollableEl = container.querySelector('.message-list')
+          if (scrollableEl) {
+            scrollableEl.scrollTop = savedScroll
+          }
+        })
+      }
+    }
+
+    previousBranchKeyRef.current = branchKey
+
+    // Reset expanded siblings toggle when branch changes
+    setExpandedSiblings(false)
+  }, [branchKey])
 
   const handleSend = useCallback(
     (text: string) => {
@@ -50,6 +137,36 @@ export function ResearchTab(): React.ReactElement {
   const handleStop = useCallback(() => {
     postMessage({ type: 'stopStream' })
   }, [postMessage])
+
+  const handleBreadcrumbNavigate = useCallback(
+    (nodeId: string) => {
+      postMessage({ type: 'switchBranch', nodeId })
+    },
+    [postMessage]
+  )
+
+  const handleSiblingSwitch = useCallback(
+    (nodeId: string) => {
+      postMessage({ type: 'switchBranch', nodeId })
+    },
+    [postMessage]
+  )
+
+  // Build breadcrumb path from tree
+  const breadcrumbPath = useMemo<ReadonlyArray<BreadcrumbSegment>>(() => {
+    if (!tree) {
+      return []
+    }
+    return buildBreadcrumbPath(tree)
+  }, [tree])
+
+  // Find sibling branches at the first branch point
+  const siblings = useMemo<ReadonlyArray<SiblingInfo>>(() => {
+    if (!tree) {
+      return []
+    }
+    return findBranchPointSiblings(tree)
+  }, [tree])
 
   // Build the display messages: tree messages + streaming assistant bubble
   const displayMessages = useMemo<ReadonlyArray<Message>>(() => {
@@ -83,15 +200,50 @@ export function ResearchTab(): React.ReactElement {
     return msgs
   }, [treeMessages, streamingNodeId, streamingText])
 
+  // Determine visible siblings with +N more logic
+  const visibleSiblings = useMemo(() => {
+    if (siblings.length <= MAX_VISIBLE_SIBLINGS || expandedSiblings) {
+      return { items: siblings, hiddenCount: 0 }
+    }
+    return {
+      items: siblings.slice(0, MAX_VISIBLE_SIBLINGS),
+      hiddenCount: siblings.length - MAX_VISIBLE_SIBLINGS,
+    }
+  }, [siblings, expandedSiblings])
+
+  const hasSiblings = siblings.length > 1
+
   return (
-    <div className="research-tab">
-      {personaOptions.length > 0 && (
-        <div className="research-tab-header">
-          <PersonaSelector
-            personas={personaOptions}
-            selectedId={selectedPersonaId}
-            onSelect={handlePersonaSelect}
-          />
+    <div className="research-tab" ref={messageListContainerRef}>
+      {breadcrumbPath.length > 0 && (
+        <Breadcrumb path={breadcrumbPath} onNavigate={handleBreadcrumbNavigate} />
+      )}
+      {hasSiblings && (
+        <div className="branch-siblings-bar">
+          {visibleSiblings.items.map((sib) => (
+            <button
+              key={sib.nodeId}
+              type="button"
+              className={`branch-sibling-chip ${sib.isActive ? 'branch-sibling-chip--active' : ''}`}
+              onClick={() => {
+                if (!sib.isActive) {
+                  handleSiblingSwitch(sib.nodeId)
+                }
+              }}
+              title={sib.label}
+            >
+              {sib.label.length > 20 ? sib.label.slice(0, 20) + '\u2026' : sib.label}
+            </button>
+          ))}
+          {visibleSiblings.hiddenCount > 0 && (
+            <button
+              type="button"
+              className="branch-expander-button"
+              onClick={() => setExpandedSiblings(true)}
+            >
+              +{visibleSiblings.hiddenCount} more
+            </button>
+          )}
         </div>
       )}
       <MessageList messages={displayMessages} />
