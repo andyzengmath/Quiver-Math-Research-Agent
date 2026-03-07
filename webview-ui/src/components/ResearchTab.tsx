@@ -1,14 +1,15 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
-import { MessageList, type Message } from './MessageList'
+import { MessageList, type Message, type BranchPoint } from './MessageList'
 import { MessageInput } from './MessageInput'
 import { useWebviewMessage } from '../hooks/useWebviewMessage'
 import { useTreeState } from '../hooks/useTreeState'
 import { useStreaming } from '../hooks/useStreaming'
+import type { DialogueNode } from '../types'
 import './MessageList.css'
 
 export function ResearchTab(): React.ReactElement {
   const { lastMessage, postMessage } = useWebviewMessage()
-  const { messages: treeMessages } = useTreeState(lastMessage)
+  const { tree, messages: treeMessages } = useTreeState(lastMessage)
   const { streamingNodeId, streamingText, isStreaming } = useStreaming(lastMessage)
 
   // On mount, request current state from extension host
@@ -26,6 +27,20 @@ export function ResearchTab(): React.ReactElement {
   const handleStop = useCallback(() => {
     postMessage({ type: 'stopStream' })
   }, [postMessage])
+
+  const handleFork = useCallback(
+    (nodeId: string) => {
+      postMessage({ type: 'fork', nodeId })
+    },
+    [postMessage]
+  )
+
+  const handleSwitchBranch = useCallback(
+    (nodeId: string) => {
+      postMessage({ type: 'switchBranch', nodeId })
+    },
+    [postMessage]
+  )
 
   // Build the display messages: tree messages + streaming assistant bubble
   const displayMessages = useMemo<ReadonlyArray<Message>>(() => {
@@ -59,9 +74,66 @@ export function ResearchTab(): React.ReactElement {
     return msgs
   }, [treeMessages, streamingNodeId, streamingText])
 
+  // Compute branch points: for each node in the active path that has multiple children,
+  // show BranchCards for the non-active siblings
+  const branchPoints = useMemo<ReadonlyArray<BranchPoint>>(() => {
+    if (!tree) {
+      return []
+    }
+
+    const activePath = tree.activePath
+    const activePathSet = new Set(activePath)
+    const result: BranchPoint[] = []
+
+    for (const nodeId of activePath) {
+      const node: DialogueNode | undefined = tree.nodes[nodeId]
+      if (!node || node.children.length <= 1) {
+        continue
+      }
+
+      // This node has multiple children -- find siblings (non-active children)
+      const siblings: BranchPoint['siblings'][number][] = []
+      for (const childId of node.children) {
+        const childNode: DialogueNode | undefined = tree.nodes[childId]
+        if (!childNode) {
+          continue
+        }
+        // Skip system nodes with empty content (fork placeholders)
+        const isOnActivePath = activePathSet.has(childId)
+        const previewText = childNode.content || `(${childNode.role})`
+
+        siblings.push({
+          nodeId: childId,
+          previewText,
+          childCount: childNode.children.length,
+          isActive: isOnActivePath,
+        })
+      }
+
+      // Only show branch cards if there are non-active siblings
+      const hasNonActive = siblings.some((s) => !s.isActive)
+      if (hasNonActive) {
+        result.push({
+          afterNodeId: nodeId,
+          siblings,
+        })
+      }
+    }
+
+    return result
+  }, [tree])
+
+  const nodes = tree?.nodes ?? undefined
+
   return (
     <div className="research-tab">
-      <MessageList messages={displayMessages} />
+      <MessageList
+        messages={displayMessages}
+        nodes={nodes}
+        onFork={handleFork}
+        onSwitchBranch={handleSwitchBranch}
+        branchPoints={branchPoints}
+      />
       <div className="input-area">
         {isStreaming && (
           <button
