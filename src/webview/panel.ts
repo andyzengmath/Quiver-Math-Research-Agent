@@ -97,6 +97,21 @@ export class MathResearchPanel {
     this.registry.register('stopStream', async (_msg, panel) => {
       panel.cancelActiveStream()
     })
+
+    this.registry.register('setRagEnabled', async (msg, _panel) => {
+      if (msg.type !== 'setRagEnabled') {
+        return
+      }
+      const config = vscode.workspace.getConfiguration('mathAgent.rag')
+      await config.update('enabled', msg.enabled, vscode.ConfigurationTarget.Global)
+    })
+
+    this.registry.register('openUrl', async (msg, _panel) => {
+      if (msg.type !== 'openUrl') {
+        return
+      }
+      await vscode.env.openExternal(vscode.Uri.parse(msg.url))
+    })
   }
 
   public postToWebview(msg: HostToWebview): void {

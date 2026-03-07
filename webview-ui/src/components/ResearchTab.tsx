@@ -3,12 +3,15 @@ import { MessageList, type Message } from './MessageList'
 import { MessageInput } from './MessageInput'
 import { Breadcrumb, type BreadcrumbSegment } from './Breadcrumb'
 import { MultiAgentCards } from './MultiAgentCards'
+import { RagToggle } from './RagToggle'
 import { useWebviewMessage } from '../hooks/useWebviewMessage'
 import { useTreeState } from '../hooks/useTreeState'
 import { useStreaming } from '../hooks/useStreaming'
 import { useMultiAgent } from '../hooks/useMultiAgent'
+import { useRagStatus } from '../hooks/useRagStatus'
 import type { DialogueNode, DialogueTree } from '../types'
 import './MessageList.css'
+import './RagComponents.css'
 
 const MAX_VISIBLE_SIBLINGS = 5
 
@@ -74,8 +77,10 @@ export function ResearchTab(): React.ReactElement {
   const { tree, messages: treeMessages } = useTreeState(lastMessage)
   const { streamingNodeId, streamingText, isStreaming } = useStreaming(lastMessage)
   const { responses: multiAgentResponses, synthesis: multiAgentSynthesis, isActive: isMultiAgentActive } = useMultiAgent(lastMessage)
+  const { ragStatusByNode, dismissCitation } = useRagStatus(lastMessage)
 
   const [expandedSiblings, setExpandedSiblings] = useState(false)
+  const [ragEnabled, setRagEnabled] = useState(true)
 
   // Scroll position storage per branch (keyed by last nodeId in activePath)
   const scrollPositionsRef = useRef<Map<string, number>>(new Map())
@@ -155,6 +160,21 @@ export function ResearchTab(): React.ReactElement {
     [postMessage]
   )
 
+  const handleRagToggle = useCallback(
+    (enabled: boolean) => {
+      setRagEnabled(enabled)
+      postMessage({ type: 'setRagEnabled', enabled })
+    },
+    [postMessage]
+  )
+
+  const handleOpenUrl = useCallback(
+    (url: string) => {
+      postMessage({ type: 'openUrl', url })
+    },
+    [postMessage]
+  )
+
   const handlePromoteToBranch = useCallback(
     (_personaId: string, content: string) => {
       // Fork from the last node on the active path, then send the promoted content
@@ -230,9 +250,14 @@ export function ResearchTab(): React.ReactElement {
 
   return (
     <div className="research-tab" ref={messageListContainerRef}>
-      {breadcrumbPath.length > 0 && (
-        <Breadcrumb path={breadcrumbPath} onNavigate={handleBreadcrumbNavigate} />
-      )}
+      <div className="research-tab__header-bar">
+        {breadcrumbPath.length > 0 && (
+          <Breadcrumb path={breadcrumbPath} onNavigate={handleBreadcrumbNavigate} />
+        )}
+        <div className="research-tab__header-actions">
+          <RagToggle enabled={ragEnabled} onToggle={handleRagToggle} />
+        </div>
+      </div>
       {hasSiblings && (
         <div className="branch-siblings-bar">
           {visibleSiblings.items.map((sib) => (
@@ -261,7 +286,12 @@ export function ResearchTab(): React.ReactElement {
           )}
         </div>
       )}
-      <MessageList messages={displayMessages} />
+      <MessageList
+        messages={displayMessages}
+        ragStatusByNode={ragStatusByNode}
+        onDismissCitation={dismissCitation}
+        onOpenUrl={handleOpenUrl}
+      />
       {isMultiAgentActive && (
         <MultiAgentCards
           responses={multiAgentResponses}

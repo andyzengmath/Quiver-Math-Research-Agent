@@ -26,10 +26,19 @@ export type WebviewToHost =
   | { readonly type: 'createTree'; readonly title: string }
   | { readonly type: 'renameTree'; readonly treeId: string; readonly title: string }
   | { readonly type: 'deleteTree'; readonly treeId: string }
+  | { readonly type: 'setRagEnabled'; readonly enabled: boolean }
+  | { readonly type: 'openUrl'; readonly url: string }
+
+export interface RagCitation {
+  readonly source: string
+  readonly title: string
+  readonly snippet: string
+  readonly url: string
+}
 
 export interface RagStatus {
   readonly state: 'searching' | 'found' | 'none' | 'error'
-  readonly citations?: ReadonlyArray<{ readonly source: string; readonly title: string }>
+  readonly citations?: ReadonlyArray<RagCitation>
 }
 
 export interface ProviderInfo {

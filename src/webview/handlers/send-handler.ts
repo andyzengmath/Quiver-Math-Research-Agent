@@ -3,6 +3,50 @@ import { MessageHandlerRegistry } from '../message-handler'
 import { WebviewToHost } from '../protocol'
 import type { MathResearchPanel } from '../panel'
 import { runMultiAgent, getMultiAgentPersonaIds } from '../../chat/multi-agent'
+import type { Citation, RagStatus as KnowledgeRagStatus } from '../../knowledge/types'
+
+/**
+ * Converts internal RagStatus (from knowledge layer) to the simplified
+ * webview-facing RagStatus format used by the protocol.
+ */
+function toWebviewRagStatus(ragResult: KnowledgeRagStatus): {
+  state: 'searching' | 'found' | 'none' | 'error'
+  citations?: ReadonlyArray<{ source: string; title: string; snippet: string; url: string }>
+} {
+  const hasCitations = ragResult.citations.length > 0
+  const hasFailure =
+    ragResult.sources.arxiv === 'failed' ||
+    ragResult.sources.wikipedia === 'failed' ||
+    ragResult.sources.nlab === 'failed'
+
+  const allFailed =
+    ragResult.sources.arxiv === 'failed' &&
+    ragResult.sources.wikipedia === 'failed' &&
+    ragResult.sources.nlab === 'failed'
+
+  let state: 'found' | 'none' | 'error'
+  if (allFailed) {
+    state = 'error'
+  } else if (hasCitations) {
+    state = 'found'
+  } else if (hasFailure) {
+    state = 'error'
+  } else {
+    state = 'none'
+  }
+
+  return {
+    state,
+    citations: hasCitations
+      ? ragResult.citations.map((c) => ({
+          source: c.source,
+          title: c.title,
+          snippet: c.snippet,
+          url: c.url,
+        }))
+      : undefined,
+  }
+}
 
 export function registerSendHandler(registry: MessageHandlerRegistry): void {
   registry.register('send', async (msg: WebviewToHost, panel: MathResearchPanel) => {
@@ -10,7 +54,7 @@ export function registerSendHandler(registry: MessageHandlerRegistry): void {
       return
     }
 
-    const { treeManager, contextBuilder, llm, storage, personaManager } = panel.services
+    const { treeManager, contextBuilder, llm, storage, personaManager, ragOrchestrator } = panel.services
 
     // Get or create a tree
     let tree = panel.getCurrentTree()
@@ -120,9 +164,31 @@ export function registerSendHandler(registry: MessageHandlerRegistry): void {
       return
     }
 
+    // Check if RAG is enabled and enrich the message with citations
+    const ragConfig = vscode.workspace.getConfiguration('mathAgent.rag')
+    const ragEnabled = ragConfig.get<boolean>('enabled') ?? true
+
+    let ragCitations: Citation[] = []
+    let ragResult: KnowledgeRagStatus | null = null
+
+    if (ragEnabled) {
+      try {
+        ragResult = await ragOrchestrator.enrich(msg.content)
+        ragCitations = [...ragResult.citations]
+      } catch {
+        // RAG failures should not block the message flow
+        ragResult = {
+          enabled: true,
+          sources: { arxiv: 'failed', wikipedia: 'failed', nlab: 'failed' },
+          citations: [],
+        }
+      }
+    }
+
     // Build LLM context from the conversation path, using active persona if set
     const llmMessages = contextBuilder.build(tree, userNode.id, {
       persona: tree.activePersona,
+      ragCitations: ragCitations.length > 0 ? ragCitations : undefined,
     })
 
     // Create cancellation token for streaming
@@ -201,6 +267,7 @@ export function registerSendHandler(registry: MessageHandlerRegistry): void {
           metadata: {
             ...assistantNode.metadata,
             ...(wasCancelled ? { incomplete: true } : {}),
+            ...(ragCitations.length > 0 ? { sources: ragCitations } : {}),
           },
         }
       }
@@ -209,6 +276,15 @@ export function registerSendHandler(registry: MessageHandlerRegistry): void {
         type: 'streamEnd',
         nodeId: assistantNodeId,
       })
+
+      // Post RAG status to the webview if RAG was invoked
+      if (ragResult) {
+        panel.postToWebview({
+          type: 'ragStatus',
+          nodeId: assistantNodeId,
+          status: toWebviewRagStatus(ragResult),
+        })
+      }
     } else if (fullText.length === 0) {
       // No content received at all -- create an empty assistant node
       const assistantNode = treeManager.addNode(
@@ -220,12 +296,22 @@ export function registerSendHandler(registry: MessageHandlerRegistry): void {
           timestamp: Date.now(),
           model: model || provider,
           ...(wasCancelled ? { incomplete: true } : {}),
+          ...(ragCitations.length > 0 ? { sources: ragCitations } : {}),
         }
       )
       panel.postToWebview({
         type: 'streamEnd',
         nodeId: assistantNode.id,
       })
+
+      // Post RAG status for empty-response case as well
+      if (ragResult) {
+        panel.postToWebview({
+          type: 'ragStatus',
+          nodeId: assistantNode.id,
+          status: toWebviewRagStatus(ragResult),
+        })
+      }
     }
 
     // Save tree and post updated state

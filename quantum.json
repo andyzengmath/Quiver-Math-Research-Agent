@@ -5,7 +5,7 @@
   "prdPath": "tasks/prd-math-research-agent.md",
   "designPath": "docs/plans/2026-03-06-math-research-agent-design.md",
   "createdAt": "2026-03-06T12:00:00Z",
-  "updatedAt": "2026-03-07T03:49:25.872Z",
+  "updatedAt": "2026-03-07T04:14:10.371Z",
   "fileConflicts": [
     {
       "file": "src/knowledge/types.ts",
@@ -2022,14 +2022,14 @@
       ],
       "review": {
         "specCompliance": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T04:14:10.371Z"
         },
         "codeQuality": {
-          "status": "pending",
+          "status": "passed",
           "issues": [],
-          "reviewedAt": null
+          "reviewedAt": "2026-03-07T04:14:10.371Z"
         }
       },
       "retries": {
@@ -2053,7 +2053,7 @@
         "Typecheck/lint passes"
       ],
       "priority": 9,
-      "status": "in_progress",
+      "status": "passed",
       "dependsOn": [
         "US-022",
         "US-016"
@@ -2070,7 +2070,7 @@
             "npm run compile"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         },
         {
           "id": "T-002",
@@ -2086,7 +2086,7 @@
             "npm run build:webview"
           ],
           "testFirst": false,
-          "status": "pending"
+          "status": "passed"
         }
       ],
       "review": {
@@ -2941,6 +2941,28 @@
         "webview-ui/src/types.ts"
       ],
       "learnings": "Multi-agent orchestration pattern: use Promise.allSettled for parallel persona LLM calls so individual failures don't cancel all; synthesis prompt should explicitly ask for agreement/contradiction resolution"
+    },
+    {
+      "timestamp": "2026-03-07T07:25:00.000Z",
+      "iteration": 28,
+      "storyId": "US-028",
+      "action": "task_completed",
+      "details": "Integrated RAG enrichment into send-handler (checks mathAgent.rag.enabled, calls ragOrchestrator.enrich, passes citations to contextBuilder, stores in node metadata.sources, posts ragStatus to webview). Created RagIndicator pill/badge component (expandable to show SourceCards), SourceCard component (title, source badge, snippet, URL, dismiss), RagToggle switch component. Added useRagStatus hook for tracking per-node RAG status. Wired RagIndicator into MessageList below assistant messages, RagToggle into ResearchTab header. Added setRagEnabled and openUrl handlers in panel.ts. Enriched protocol RagCitation type with snippet/url fields.",
+      "filesChanged": [
+        "src/webview/handlers/send-handler.ts",
+        "src/webview/panel.ts",
+        "src/webview/protocol.ts",
+        "webview-ui/src/types.ts",
+        "webview-ui/src/components/RagIndicator.tsx",
+        "webview-ui/src/components/SourceCard.tsx",
+        "webview-ui/src/components/RagToggle.tsx",
+        "webview-ui/src/components/RagComponents.css",
+        "webview-ui/src/components/ResearchTab.tsx",
+        "webview-ui/src/components/MessageList.tsx",
+        "webview-ui/src/components/MessageList.css",
+        "webview-ui/src/hooks/useRagStatus.ts"
+      ],
+      "learnings": "Two different RagStatus types exist: knowledge/types.ts (enabled, sources map, citations array) and webview protocol (state enum, simplified citations). The send-handler converts between them using toWebviewRagStatus(). RAG failures are gracefully handled and should never block the main message flow."
     }
   ],
   "codebasePatterns": [
@@ -2962,6 +2984,8 @@
     "Use src/test/register.js to mock vscode module in unit tests",
     "WikipediaClient in src/knowledge/wikipedia.ts uses globalThis.fetch for HTTP -- stub with sinon.stub(globalThis, 'fetch') in tests",
     "mock-vscode-runtime.js window object must include showWarningMessage for code that calls vscode.window.showWarningMessage",
-    "Multi-agent orchestration in src/chat/multi-agent.ts uses Promise.allSettled for parallel LLM calls; send-handler.ts checks tree.activePersona === 'multi-agent' to branch into multi-agent flow"
+    "Multi-agent orchestration in src/chat/multi-agent.ts uses Promise.allSettled for parallel LLM calls; send-handler.ts checks tree.activePersona === 'multi-agent' to branch into multi-agent flow",
+    "RAG status uses two-layer types: knowledge/types.ts RagStatus (enabled, sources map, citations) for extension host, and webview protocol RagStatus (state enum, simplified citations) for webview; send-handler.ts converts between them via toWebviewRagStatus()",
+    "Per-node webview state (ragStatus, lean4Result) tracked via custom hooks (useRagStatus, etc.) that listen on lastMessage and maintain a Map<nodeId, status>"
   ]
 }
