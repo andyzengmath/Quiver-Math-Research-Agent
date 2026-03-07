@@ -43,8 +43,15 @@ class ThemeIcon {
   }
 }
 
+const ConfigurationTarget = {
+  Global: 1,
+  Workspace: 2,
+  WorkspaceFolder: 3,
+}
+
 module.exports = {
   CancellationTokenSource,
+  ConfigurationTarget,
   LanguageModelChatMessage,
   LanguageModelChatMessageRole,
   ThemeIcon,
@@ -61,6 +68,8 @@ module.exports = {
     showInformationMessage: () => Promise.resolve(undefined),
     showWarningMessage: () => Promise.resolve(undefined),
     showErrorMessage: () => Promise.resolve(undefined),
+    showQuickPick: () => Promise.resolve(undefined),
+    showInputBox: () => Promise.resolve(undefined),
   },
   commands: {
     registerCommand: () => ({ dispose: () => {} }),
@@ -69,6 +78,13 @@ module.exports = {
     getConfiguration: () => ({
       get: () => undefined,
       update: () => Promise.resolve(),
+      inspect: () => ({
+        key: '',
+        defaultValue: undefined,
+        globalValue: undefined,
+        workspaceValue: undefined,
+        workspaceFolderValue: undefined,
+      }),
     }),
   },
 }

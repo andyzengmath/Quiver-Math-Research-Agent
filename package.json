@@ -20,6 +20,10 @@
       {
         "command": "mathAgent.openPanel",
         "title": "Open Math Research Studio"
+      },
+      {
+        "command": "mathAgent.configureProvider",
+        "title": "Math Research Agent: Configure LLM Provider"
       }
     ],
     "chatParticipants": [
