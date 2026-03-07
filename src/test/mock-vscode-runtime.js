@@ -37,12 +37,25 @@ class LanguageModelChatMessage {
   }
 }
 
+class ThemeIcon {
+  constructor(id) {
+    this.id = id
+  }
+}
+
 module.exports = {
   CancellationTokenSource,
   LanguageModelChatMessage,
   LanguageModelChatMessageRole,
+  ThemeIcon,
   lm: {
     selectChatModels: () => Promise.resolve([]),
+  },
+  chat: {
+    createChatParticipant: () => ({
+      iconPath: undefined,
+      dispose: () => {},
+    }),
   },
   window: {
     showInformationMessage: () => Promise.resolve(undefined),

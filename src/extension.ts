@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 import { VscodeLmProvider } from './llm/providers/vscode-lm'
 import { createServices } from './services'
 import { MathResearchPanel } from './webview/panel'
+import { registerChatParticipant } from './chat/participant'
 
 export function activate(context: vscode.ExtensionContext): void {
   const services = createServices(context)
@@ -19,8 +20,8 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(openPanelCommand)
 
-  // Suppress unused variable warning — services will be used by subsequent stories
-  void services
+  // Register the @math chat participant
+  registerChatParticipant(context, services.llm, services.personaManager)
 }
 
 export function deactivate(): void {

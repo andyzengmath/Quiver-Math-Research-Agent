@@ -22,6 +22,15 @@
         "title": "Open Math Research Studio"
       }
     ],
+    "chatParticipants": [
+      {
+        "id": "math-research-agent.math",
+        "name": "math",
+        "fullName": "Math Research Agent",
+        "description": "Ask math questions, explore proofs, search literature",
+        "isSticky": true
+      }
+    ],
     "configuration": {
       "title": "Math Research Agent",
       "properties": {
