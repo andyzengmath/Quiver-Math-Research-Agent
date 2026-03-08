@@ -9,6 +9,8 @@ import { registerPaperHandler } from './handlers/paper-handler'
 import { registerLean4Handlers } from './handlers/lean4-handler'
 import { registerModelHandler } from './handlers/model-handler'
 import { registerTreeHandler } from './handlers/tree-handler'
+import { registerPersonaHandlers } from './handlers/persona-handler'
+import { registerWriteHandlers } from './handlers/write-handler'
 
 export class MathResearchPanel {
   public static readonly viewType = 'mathAgent.researchPanel'
@@ -84,6 +86,8 @@ export class MathResearchPanel {
     registerLean4Handlers(this.registry)
     registerModelHandler(this.registry)
     registerTreeHandler(this.registry)
+    registerPersonaHandlers(this.registry)
+    registerWriteHandlers(this.registry)
   }
 
   private registerBuiltInHandlers(): void {
@@ -152,7 +156,11 @@ export class MathResearchPanel {
       if (msg.type !== 'openUrl') {
         return
       }
-      await vscode.env.openExternal(vscode.Uri.parse(msg.url))
+      const uri = vscode.Uri.parse(msg.url)
+      if (uri.scheme !== 'https' && uri.scheme !== 'http') {
+        return
+      }
+      await vscode.env.openExternal(uri)
     })
   }
 

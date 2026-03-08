@@ -7,7 +7,7 @@ import { LlmAuthError, LlmMessage, LlmOptions, LlmProvider, LlmRateLimitError } 
 import { LlmService } from '../service'
 
 const DEFAULT_MODEL = 'gemini-3.1-pro'
-const SECRET_KEY = 'google'
+const SECRET_KEY = 'google-api-key'
 
 type GoogleAIFactory = (apiKey: string) => GoogleGenerativeAI
 

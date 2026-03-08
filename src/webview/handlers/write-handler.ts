@@ -1,11 +1,11 @@
+import * as path from 'path'
+import * as fs from 'fs'
 import * as vscode from 'vscode'
 import { MessageHandlerRegistry } from '../message-handler'
 import { WebviewToHost } from '../protocol'
 import type { MathResearchPanel } from '../panel'
 import { scanTexFiles, parseTexStructure, findBibPaths } from '../../papers/tex-parser'
 import type { LlmMessage } from '../../llm/types'
-import * as path from 'path'
-import * as fs from 'fs'
 
 const DRAFT_SYSTEM_PROMPT =
   'You are a LaTeX writing assistant for mathematical research papers. ' +
@@ -126,6 +126,21 @@ export function registerWriteHandlers(registry: MessageHandlerRegistry): void {
     }
 
     try {
+      // Validate file path is within a workspace folder (prevent path traversal)
+      const workspaceFolders = vscode.workspace.workspaceFolders
+      if (!workspaceFolders) {
+        void vscode.window.showErrorMessage('No workspace folder open.')
+        return
+      }
+      const resolved = path.resolve(msg.filePath)
+      const inWorkspace = workspaceFolders.some(f =>
+        resolved.startsWith(f.uri.fsPath)
+      )
+      if (!inWorkspace) {
+        void vscode.window.showErrorMessage('File path must be within the workspace.')
+        return
+      }
+
       const uri = vscode.Uri.file(msg.filePath)
       const position = new vscode.Position(msg.afterLine, 0)
 

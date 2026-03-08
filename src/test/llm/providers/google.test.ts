@@ -96,7 +96,7 @@ describe('GoogleProvider', () => {
 
   describe('sendMessage - streaming', () => {
     it('calls generateContentStream and yields text chunks', async () => {
-      await llmService.setApiKey('google', 'test-google-key')
+      await llmService.setApiKey('google-api-key', 'test-google-key')
 
       const streamResult = createMockStreamResult(['Hello', ' World', '!'])
       const generateStub = sandbox.stub().resolves(streamResult)
@@ -138,7 +138,7 @@ describe('GoogleProvider', () => {
     })
 
     it('throws LlmAuthError when Google returns auth error (403)', async () => {
-      await llmService.setApiKey('google', 'invalid-key')
+      await llmService.setApiKey('google-api-key', 'invalid-key')
 
       const authError = new GoogleGenerativeAIFetchError(
         'API key not valid. Please pass a valid API key.',
@@ -170,7 +170,7 @@ describe('GoogleProvider', () => {
     })
 
     it('throws LlmAuthError when Google returns 401', async () => {
-      await llmService.setApiKey('google', 'expired-key')
+      await llmService.setApiKey('google-api-key', 'expired-key')
 
       const authError = new GoogleGenerativeAIFetchError(
         'Unauthorized',
@@ -204,7 +204,7 @@ describe('GoogleProvider', () => {
 
   describe('rate limit errors', () => {
     it('throws LlmRateLimitError when Google returns 429', async () => {
-      await llmService.setApiKey('google', 'test-key')
+      await llmService.setApiKey('google-api-key', 'test-key')
 
       const rateLimitError = new GoogleGenerativeAIFetchError(
         'Resource has been exhausted',
@@ -237,7 +237,7 @@ describe('GoogleProvider', () => {
 
   describe('system instruction', () => {
     it('sets system instruction from system messages', async () => {
-      await llmService.setApiKey('google', 'test-key')
+      await llmService.setApiKey('google-api-key', 'test-key')
 
       const streamResult = createMockStreamResult(['response'])
       const generateStub = sandbox.stub().resolves(streamResult)
@@ -275,7 +275,7 @@ describe('GoogleProvider', () => {
     })
 
     it('concatenates multiple system messages into one instruction', async () => {
-      await llmService.setApiKey('google', 'test-key')
+      await llmService.setApiKey('google-api-key', 'test-key')
 
       const streamResult = createMockStreamResult(['ok'])
       const generateStub = sandbox.stub().resolves(streamResult)
@@ -301,7 +301,7 @@ describe('GoogleProvider', () => {
 
   describe('model configuration', () => {
     it('uses model from options when provided', async () => {
-      await llmService.setApiKey('google', 'test-key')
+      await llmService.setApiKey('google-api-key', 'test-key')
 
       const streamResult = createMockStreamResult(['ok'])
       const generateStub = sandbox.stub().resolves(streamResult)
@@ -320,7 +320,7 @@ describe('GoogleProvider', () => {
     })
 
     it('uses default model when none specified in options', async () => {
-      await llmService.setApiKey('google', 'test-key')
+      await llmService.setApiKey('google-api-key', 'test-key')
 
       const streamResult = createMockStreamResult(['ok'])
       const generateStub = sandbox.stub().resolves(streamResult)
@@ -343,7 +343,7 @@ describe('GoogleProvider', () => {
 
   describe('edge cases', () => {
     it('handles empty messages array', async () => {
-      await llmService.setApiKey('google', 'test-key')
+      await llmService.setApiKey('google-api-key', 'test-key')
 
       const streamResult = createMockStreamResult(['ok'])
       const generateStub = sandbox.stub().resolves(streamResult)
@@ -359,7 +359,7 @@ describe('GoogleProvider', () => {
     })
 
     it('handles empty stream with no chunks', async () => {
-      await llmService.setApiKey('google', 'test-key')
+      await llmService.setApiKey('google-api-key', 'test-key')
 
       const streamResult = createMockStreamResult([])
       const generateStub = sandbox.stub().resolves(streamResult)
@@ -375,7 +375,7 @@ describe('GoogleProvider', () => {
     })
 
     it('rethrows unknown errors unchanged', async () => {
-      await llmService.setApiKey('google', 'test-key')
+      await llmService.setApiKey('google-api-key', 'test-key')
 
       const unknownError = new Error('network failure')
       const generateStub = sandbox.stub().rejects(unknownError)
@@ -404,7 +404,7 @@ describe('GoogleProvider', () => {
     })
 
     it('handles chunks where text() returns empty string', async () => {
-      await llmService.setApiKey('google', 'test-key')
+      await llmService.setApiKey('google-api-key', 'test-key')
 
       const streamResult = createMockStreamResult(['', 'data', ''])
       const generateStub = sandbox.stub().resolves(streamResult)
@@ -421,7 +421,7 @@ describe('GoogleProvider', () => {
     })
 
     it('maps GoogleGenerativeAIFetchError with 500 as unknown error (rethrows)', async () => {
-      await llmService.setApiKey('google', 'test-key')
+      await llmService.setApiKey('google-api-key', 'test-key')
 
       const serverError = new GoogleGenerativeAIFetchError(
         'Internal server error',

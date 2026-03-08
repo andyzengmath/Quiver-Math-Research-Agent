@@ -6,48 +6,66 @@ import { registerChatParticipant } from './chat/participant'
 import { runOnboardingWizard } from './onboarding'
 
 export function activate(context: vscode.ExtensionContext): void {
-  const services = createServices(context)
+  try {
+    const services = createServices(context)
 
-  // Register the VS Code Language Model API provider (Copilot)
-  const vscodeLmProvider = new VscodeLmProvider()
-  services.llm.registerProvider(vscodeLmProvider)
+    // Register the VS Code Language Model API provider (Copilot)
+    const vscodeLmProvider = new VscodeLmProvider()
+    services.llm.registerProvider(vscodeLmProvider)
 
-  const openPanelCommand = vscode.commands.registerCommand(
-    'mathAgent.openPanel',
-    () => {
-      MathResearchPanel.createOrShow(context, services)
+    // Restore active provider from user settings for returning users
+    const configuredProvider = vscode.workspace
+      .getConfiguration('mathAgent.llm')
+      .get<string>('provider')
+    if (configuredProvider) {
+      try {
+        services.llm.setProvider(configuredProvider)
+      } catch {
+        // Provider not registered; user will be prompted via onboarding
+      }
     }
-  )
 
-  // Register command to (re-)configure provider at any time
-  const configureProviderCommand = vscode.commands.registerCommand(
-    'mathAgent.configureProvider',
-    () => runOnboardingWizard(services.llm, context)
-  )
+    const openPanelCommand = vscode.commands.registerCommand(
+      'mathAgent.openPanel',
+      () => {
+        MathResearchPanel.createOrShow(context, services)
+      }
+    )
 
-  context.subscriptions.push(openPanelCommand, configureProviderCommand)
+    // Register command to (re-)configure provider at any time
+    const configureProviderCommand = vscode.commands.registerCommand(
+      'mathAgent.configureProvider',
+      () => runOnboardingWizard(services.llm, context)
+    )
 
-  // Register the @math chat participant with slash commands
-  registerChatParticipant(context, {
-    llmService: services.llm,
-    personaManager: services.personaManager,
-    contextBuilder: services.contextBuilder,
-    ragOrchestrator: services.ragOrchestrator,
-    arxivClient: services.arxivClient,
-  })
+    context.subscriptions.push(openPanelCommand, configureProviderCommand)
 
-  // Launch onboarding wizard on first activation if no provider is configured.
-  const onboardingComplete = context.globalState.get<boolean>('mathAgent.onboardingComplete')
-  const providerInspect = vscode.workspace
-    .getConfiguration('mathAgent.llm')
-    .inspect<string>('provider')
-  const hasUserConfiguredProvider =
-    providerInspect?.globalValue !== undefined ||
-    providerInspect?.workspaceValue !== undefined ||
-    providerInspect?.workspaceFolderValue !== undefined
+    // Register the @math chat participant with slash commands
+    registerChatParticipant(context, {
+      llmService: services.llm,
+      personaManager: services.personaManager,
+      contextBuilder: services.contextBuilder,
+      ragOrchestrator: services.ragOrchestrator,
+      arxivClient: services.arxivClient,
+    })
 
-  if (!onboardingComplete && !hasUserConfiguredProvider) {
-    void runOnboardingWizard(services.llm, context)
+    // Launch onboarding wizard on first activation if no provider is configured.
+    const onboardingComplete = context.globalState.get<boolean>('mathAgent.onboardingComplete')
+    const providerInspect = vscode.workspace
+      .getConfiguration('mathAgent.llm')
+      .inspect<string>('provider')
+    const hasUserConfiguredProvider =
+      providerInspect?.globalValue !== undefined ||
+      providerInspect?.workspaceValue !== undefined ||
+      providerInspect?.workspaceFolderValue !== undefined
+
+    if (!onboardingComplete && !hasUserConfiguredProvider) {
+      void runOnboardingWizard(services.llm, context)
+    }
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error)
+    vscode.window.showErrorMessage(`Math Research Agent failed to activate: ${msg}`)
+    throw error
   }
 }
 
