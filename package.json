@@ -12,6 +12,7 @@
   ],
   "activationEvents": [
     "onCommand:mathAgent.openPanel",
+    "onCommand:mathAgent.configureProvider",
     "onChatParticipant:math-research-agent.math"
   ],
   "main": "./out/extension.js",
@@ -19,11 +20,13 @@
     "commands": [
       {
         "command": "mathAgent.openPanel",
-        "title": "Open Math Research Studio"
+        "title": "Open Panel",
+        "category": "Math Research Agent"
       },
       {
         "command": "mathAgent.configureProvider",
-        "title": "Math Research Agent: Configure LLM Provider"
+        "title": "Configure LLM Provider",
+        "category": "Math Research Agent"
       }
     ],
     "chatParticipants": [
