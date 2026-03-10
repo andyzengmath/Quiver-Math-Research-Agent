@@ -3,7 +3,7 @@
   "displayName": "Quiver: Math Research Agent",
   "description": "AI-powered math research assistant with branching dialogue, RAG knowledge retrieval, and paper writing",
   "version": "0.1.1",
-  "publisher": "andyzengmath",
+  "publisher": "Quiver-Math",
   "icon": "media/icon.png",
   "license": "MIT",
   "repository": {
