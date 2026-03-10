@@ -1,0 +1,49 @@
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Dark Background Circle for visibility on light tabs -->
+    <circle cx="50" cy="50" r="50" fill="#0a0a0a" />
+    
+    <!-- Graph Edges -->
+    <g stroke="white" stroke-width="4" stroke-opacity="0.9" stroke-linecap="round">
+        <!-- Outer connections -->
+        <line x1="50" y1="15" x2="25" y2="25" />
+        <line x1="50" y1="15" x2="75" y2="25" />
+        <line x1="25" y1="25" x2="15" y2="50" />
+        <line x1="75" y1="25" x2="85" y2="50" />
+        <line x1="15" y1="50" x2="25" y2="75" />
+        <line x1="85" y1="50" x2="75" y2="75" />
+        <line x1="25" y1="75" x2="50" y2="85" />
+        <line x1="75" y1="75" x2="50" y2="85" />
+
+        <!-- Inner Cycle -->
+        <line x1="25" y1="25" x2="75" y2="25" />
+        <line x1="75" y1="25" x2="75" y2="75" />
+        <line x1="75" y1="75" x2="25" y2="75" />
+        <line x1="25" y1="75" x2="25" y2="25" />
+
+        <!-- Tail -->
+        <line x1="75" y1="75" x2="65" y2="65" />
+        <line x1="65" y1="65" x2="80" y2="80" />
+        <line x1="80" y1="80" x2="92" y2="92" />
+        <line x1="50" y1="85" x2="80" y2="80" />
+    </g>
+
+    <!-- Nodes -->
+    <g fill="white">
+        <!-- Cardinals -->
+        <circle cx="50" cy="15" r="4" />
+        <circle cx="85" cy="50" r="4" />
+        <circle cx="50" cy="85" r="4" />
+        <circle cx="15" cy="50" r="4" />
+
+        <!-- Intermediates -->
+        <circle cx="25" cy="25" r="4" />
+        <circle cx="75" cy="25" r="4" />
+        <circle cx="75" cy="75" r="4" />
+        <circle cx="25" cy="75" r="4" />
+
+        <!-- Tail -->
+        <circle cx="65" cy="65" r="4" />
+        <circle cx="80" cy="80" r="4" />
+        <circle cx="92" cy="92" r="4" />
+    </g>
+</svg>
