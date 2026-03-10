@@ -86,6 +86,12 @@
           "default": "",
           "description": "Model to use for entity detection (empty string uses the provider default)"
         },
+        "mathAgent.llm.reasoningEffort": {
+          "type": "string",
+          "enum": ["low", "medium", "high"],
+          "default": "high",
+          "description": "Reasoning/thinking effort level for LLM responses (supported by GPT-5.4, Claude with extended thinking)"
+        },
         "mathAgent.defaultPersona": {
           "type": "string",
           "default": "algebraist",

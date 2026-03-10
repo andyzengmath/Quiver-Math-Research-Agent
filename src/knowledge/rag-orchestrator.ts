@@ -58,42 +58,67 @@ export class RagOrchestrator {
    * Uses Promise.allSettled to ensure partial failures don't block results.
    */
   private async queryAllSources(entities: readonly string[]): Promise<RagStatus> {
-    const allCitations: Citation[] = []
-    let arxivStatus: SourceStatus = 'success'
-    let wikipediaStatus: SourceStatus = 'success'
-    let nlabStatus: SourceStatus = 'success'
+    // Collect results per-entity first, then merge to avoid concurrent overwrites
+    interface EntityResult {
+      readonly citations: Citation[]
+      readonly arxivFailed: boolean
+      readonly wikipediaFailed: boolean
+      readonly nlabFailed: boolean
+    }
 
-    // For each entity, query all 3 sources in parallel
-    const entityPromises = entities.map(async (entity) => {
+    const entityPromises = entities.map(async (entity): Promise<EntityResult> => {
       const results = await Promise.allSettled([
         this.arxiv.search(entity),
         this.wikipedia.search(entity),
         this.nlab.search(entity),
       ])
 
-      // Process arxiv result
+      const citations: Citation[] = []
+      let arxivFailed = false
+      let wikipediaFailed = false
+      let nlabFailed = false
+
       if (results[0].status === 'fulfilled') {
-        allCitations.push(...results[0].value)
+        citations.push(...results[0].value)
       } else {
-        arxivStatus = 'failed'
+        arxivFailed = true
       }
 
-      // Process wikipedia result
       if (results[1].status === 'fulfilled') {
-        allCitations.push(...results[1].value)
+        citations.push(...results[1].value)
       } else {
-        wikipediaStatus = 'failed'
+        wikipediaFailed = true
       }
 
-      // Process nlab result
       if (results[2].status === 'fulfilled') {
-        allCitations.push(...results[2].value)
+        citations.push(...results[2].value)
       } else {
-        nlabStatus = 'failed'
+        nlabFailed = true
       }
+
+      return { citations, arxivFailed, wikipediaFailed, nlabFailed }
     })
 
-    await Promise.all(entityPromises)
+    const entityResults = await Promise.all(entityPromises)
+
+    // Merge all entity results
+    const allCitations: Citation[] = []
+    let arxivStatus: SourceStatus = 'success'
+    let wikipediaStatus: SourceStatus = 'success'
+    let nlabStatus: SourceStatus = 'success'
+
+    for (const result of entityResults) {
+      allCitations.push(...result.citations)
+      if (result.arxivFailed) {
+        arxivStatus = 'failed'
+      }
+      if (result.wikipediaFailed) {
+        wikipediaStatus = 'failed'
+      }
+      if (result.nlabFailed) {
+        nlabStatus = 'failed'
+      }
+    }
 
     const deduplicated = this.deduplicateByUrl(allCitations)
 

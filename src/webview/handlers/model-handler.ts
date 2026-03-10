@@ -12,9 +12,8 @@ export function registerModelHandler(registry: MessageHandlerRegistry): void {
 
     try {
       llm.setProvider(msg.provider)
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      console.warn(`[model-handler] setProvider failed: ${errorMessage}`)
+    } catch {
+      // setProvider failed silently
     }
   })
 }

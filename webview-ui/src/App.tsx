@@ -56,10 +56,10 @@ export function App(): React.ReactElement {
           </button>
         </div>
         <div className="tab-content">
-          <div style={{ display: activeTab === 'research' ? 'flex' : 'none', flexDirection: 'column', height: '100%' }}>
+          <div style={{ display: activeTab === 'research' ? 'flex' : 'none', flexDirection: 'column', flex: 1, minHeight: 0 }}>
             <ResearchTab />
           </div>
-          <div style={{ display: activeTab === 'write' ? 'flex' : 'none', flexDirection: 'column', height: '100%' }}>
+          <div style={{ display: activeTab === 'write' ? 'flex' : 'none', flexDirection: 'column', flex: 1, minHeight: 0 }}>
             <WriteTab />
           </div>
         </div>

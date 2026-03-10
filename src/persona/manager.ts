@@ -1,6 +1,5 @@
 import { PersonaConfig } from './types'
-
-export type ConfigGetter = <T>(key: string, defaultValue?: T) => T | undefined
+import type { ConfigGetter } from '../utils/types'
 
 const builtInPersonas: readonly PersonaConfig[] = [
   {

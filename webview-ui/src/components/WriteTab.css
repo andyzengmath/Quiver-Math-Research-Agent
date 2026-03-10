@@ -117,6 +117,30 @@
   margin: 6px 0;
 }
 
+.write-insert-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--vscode-panel-border, #444);
+}
+
+.write-insert-main-button {
+  padding: 6px 12px;
+  font-size: 12px;
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.write-insert-main-button:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
 .write-loading {
   text-align: center;
   padding: 12px;

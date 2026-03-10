@@ -55,6 +55,7 @@ export class AnthropicProvider implements LlmProvider {
         messages: anthropicMessages,
         ...(systemParam !== undefined ? { system: systemParam } : {}),
         ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
+        ...(options.reasoningEffort === 'high' ? { thinking: { type: 'enabled' as const, budget_tokens: 10000 } } : {}),
       })
 
       for await (const event of stream as AsyncIterable<Anthropic.MessageStreamEvent>) {

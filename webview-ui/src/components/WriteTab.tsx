@@ -156,6 +156,37 @@ export function WriteTab(): React.ReactElement {
             className="write-draft-content"
             dangerouslySetInnerHTML={{ __html: renderedDraft }}
           />
+          {selectedFile && (
+            <div className="write-insert-actions">
+              <button
+                type="button"
+                className="write-insert-main-button"
+                onClick={() => handleInsert(0)}
+                title="Insert at the beginning of the file"
+              >
+                Insert at beginning of file
+              </button>
+              {texStructure.length > 0 && texStructure.map((item, index) => (
+                <button
+                  key={`insert-${item.line}-${index}`}
+                  type="button"
+                  className="write-insert-main-button"
+                  onClick={() => handleInsert(item.line)}
+                  title={`Insert after: ${item.title}`}
+                >
+                  Insert after: {item.title}
+                </button>
+              ))}
+              <button
+                type="button"
+                className="write-insert-main-button"
+                onClick={() => handleInsert(99999)}
+                title="Append to end of file"
+              >
+                Append to end of file
+              </button>
+            </div>
+          )}
         </div>
       )}
 

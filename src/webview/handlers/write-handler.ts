@@ -1,5 +1,5 @@
 import * as path from 'path'
-import * as fs from 'fs'
+import * as fs from 'fs/promises'
 import * as vscode from 'vscode'
 import { MessageHandlerRegistry } from '../message-handler'
 import { WebviewToHost } from '../protocol'
@@ -164,14 +164,6 @@ export function registerWriteHandlers(registry: MessageHandlerRegistry): void {
     }
   })
 
-  // Handler: writeChat (write-tab chat with document context)
-  registry.register('writeChat', async (msg: WebviewToHost, panel: MathResearchPanel) => {
-    // writeChat is not in the WebviewToHost union yet, but handle gracefully
-    // The chat input in the Write tab reuses draftFromBranch for now
-    if (msg.type !== 'draftFromBranch') {
-      return
-    }
-  })
 }
 
 /**
@@ -206,7 +198,7 @@ async function appendBibTexEntries(
   let bibFilePath: string | null = null
 
   try {
-    const texContent = fs.readFileSync(texFilePath, 'utf-8')
+    const texContent = await fs.readFile(texFilePath, 'utf-8')
     const bibPaths = findBibPaths(texContent)
     if (bibPaths.length > 0) {
       bibFilePath = path.resolve(texDir, bibPaths[0].path)
@@ -230,7 +222,7 @@ async function appendBibTexEntries(
   // Read existing bib entries to avoid duplicates
   let existingBib = ''
   try {
-    existingBib = fs.readFileSync(bibFilePath, 'utf-8')
+    existingBib = await fs.readFile(bibFilePath, 'utf-8')
   } catch {
     // File might not exist yet - that's OK, we'll create it
   }

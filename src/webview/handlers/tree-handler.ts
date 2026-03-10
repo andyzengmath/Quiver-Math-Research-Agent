@@ -16,9 +16,8 @@ export function registerTreeHandler(registry: MessageHandlerRegistry): void {
           updatedAt: e.updatedAt,
         })),
       })
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      console.warn(`[tree-handler] listTrees failed: ${errorMessage}`)
+    } catch {
+      // listTrees failed silently
       panel.postToWebview({ type: 'treeList', trees: [] })
     }
   })
@@ -35,9 +34,8 @@ export function registerTreeHandler(registry: MessageHandlerRegistry): void {
       treeManager.loadTree(tree)
       panel.setCurrentTree(tree)
       panel.postToWebview({ type: 'treeState', tree })
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      console.warn(`[tree-handler] selectTree failed: ${errorMessage}`)
+    } catch {
+      // selectTree failed silently
     }
   })
 
@@ -107,9 +105,8 @@ export function registerTreeHandler(registry: MessageHandlerRegistry): void {
           updatedAt: e.updatedAt,
         })),
       })
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      console.warn(`[tree-handler] renameTree failed: ${errorMessage}`)
+    } catch {
+      // renameTree failed silently
     }
   })
 
@@ -139,9 +136,8 @@ export function registerTreeHandler(registry: MessageHandlerRegistry): void {
           updatedAt: e.updatedAt,
         })),
       })
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      console.warn(`[tree-handler] deleteTree failed: ${errorMessage}`)
+    } catch {
+      // deleteTree failed silently
     }
   })
 }

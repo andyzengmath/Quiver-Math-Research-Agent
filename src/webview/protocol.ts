@@ -30,6 +30,7 @@ export type WebviewToHost =
   | { readonly type: 'deleteTree'; readonly treeId: string }
   | { readonly type: 'setRagEnabled'; readonly enabled: boolean }
   | { readonly type: 'openUrl'; readonly url: string }
+  | { readonly type: 'forkAndSend'; readonly nodeId: string; readonly content: string }
 
 export interface RagCitation {
   readonly source: string

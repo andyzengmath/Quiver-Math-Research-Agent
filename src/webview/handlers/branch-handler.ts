@@ -19,9 +19,8 @@ export function registerBranchHandler(registry: MessageHandlerRegistry): void {
 
     try {
       treeManager.switchBranch(treeId, msg.nodeId)
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      console.warn(`[branch-handler] switchBranch failed: ${errorMessage}`)
+    } catch {
+      // switchBranch failed silently
       return
     }
 
@@ -53,9 +52,8 @@ export function registerBranchHandler(registry: MessageHandlerRegistry): void {
 
     try {
       treeManager.forkFrom(treeId, msg.nodeId)
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      console.warn(`[branch-handler] fork failed: ${errorMessage}`)
+    } catch {
+      // fork failed silently
       return
     }
 
@@ -87,9 +85,8 @@ export function registerBranchHandler(registry: MessageHandlerRegistry): void {
 
     try {
       treeManager.deleteBranch(treeId, msg.nodeId)
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      console.warn(`[branch-handler] deleteBranch failed: ${errorMessage}`)
+    } catch {
+      // deleteBranch failed silently
       return
     }
 
@@ -103,5 +100,42 @@ export function registerBranchHandler(registry: MessageHandlerRegistry): void {
     }
 
     panel.postToWebview({ type: 'treeState', tree: updatedTree })
+  })
+
+  registry.register('forkAndSend', async (msg: WebviewToHost, panel: MathResearchPanel) => {
+    if (msg.type !== 'forkAndSend') {
+      return
+    }
+
+    const { treeManager, storage } = panel.services
+
+    const tree = panel.getCurrentTree()
+    if (!tree) {
+      return
+    }
+
+    const treeId = tree.id
+
+    // First, fork from the specified node
+    try {
+      treeManager.forkFrom(treeId, msg.nodeId)
+    } catch {
+      // fork failed silently
+      return
+    }
+
+    const forkedTree = treeManager.getTree(treeId)
+    panel.setCurrentTree(forkedTree)
+
+    try {
+      storage.saveTree(forkedTree)
+    } catch {
+      // Storage errors should not crash the handler
+    }
+
+    panel.postToWebview({ type: 'treeState', tree: forkedTree })
+
+    // Then, send the content as a new message by delegating to the send handler
+    await panel.registry.handle({ type: 'send', content: msg.content }, panel)
   })
 }

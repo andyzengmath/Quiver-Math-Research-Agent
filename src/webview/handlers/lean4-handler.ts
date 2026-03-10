@@ -222,20 +222,26 @@ function storeLean4Result(
 ): void {
   const currentTree = treeManager.getTree(treeId)
   const targetNode = currentTree.nodes[nodeId]
-  if (targetNode) {
-    currentTree.nodes[nodeId] = {
-      ...targetNode,
-      metadata: {
-        ...targetNode.metadata,
-        lean4Result: result,
-      },
-    }
-  }
+  const treeToSave = targetNode
+    ? {
+        ...currentTree,
+        nodes: {
+          ...currentTree.nodes,
+          [nodeId]: {
+            ...targetNode,
+            metadata: {
+              ...targetNode.metadata,
+              lean4Result: result,
+            },
+          },
+        },
+      }
+    : currentTree
 
-  panel.setCurrentTree(currentTree)
+  panel.setCurrentTree(treeToSave)
 
   try {
-    storage.saveTree(currentTree)
+    storage.saveTree(treeToSave)
   } catch {
     // Storage errors should not crash the handler
   }

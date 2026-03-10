@@ -17,6 +17,7 @@ import { ArxivClient } from './knowledge/arxiv'
 import { NlabClient } from './knowledge/nlab'
 import { EntityDetector } from './knowledge/entity-detector'
 import { RagOrchestrator } from './knowledge/rag-orchestrator'
+import { PaperManager } from './papers/manager'
 
 export interface Services {
   readonly personaManager: PersonaManager
@@ -31,6 +32,7 @@ export interface Services {
   readonly lean4: Lean4Service
   readonly entityDetector: EntityDetector
   readonly ragOrchestrator: RagOrchestrator
+  readonly paperManager: PaperManager
 }
 
 export function createServices(context: vscode.ExtensionContext): Services {
@@ -49,7 +51,12 @@ export function createServices(context: vscode.ExtensionContext): Services {
   llm.registerProvider(new GoogleProvider(llm))
 
   const workspaceFolders = vscode.workspace.workspaceFolders
-  const workspaceRoot = workspaceFolders?.[0]?.uri.fsPath ?? ''
+  let workspaceRoot = workspaceFolders?.[0]?.uri.fsPath ?? ''
+  if (workspaceRoot === '') {
+    const fallback = os.tmpdir() + '/math-agent'
+    console.log(`[math-agent] No workspace folder found. Using fallback path: ${fallback}`)
+    workspaceRoot = fallback
+  }
   const storage = new StorageService(workspaceRoot)
   const contextBuilder = new ContextBuilder(personaManager)
   const lean4 = new Lean4Service({
@@ -89,5 +96,6 @@ export function createServices(context: vscode.ExtensionContext): Services {
     lean4,
     entityDetector,
     ragOrchestrator,
+    paperManager: new PaperManager(),
   }
 }

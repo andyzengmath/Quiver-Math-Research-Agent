@@ -4,12 +4,7 @@
  */
 import * as crypto from 'crypto'
 import { Lean4Result } from './types'
-
-/**
- * ConfigGetter function type for reading VS Code configuration values.
- * Enables dependency injection for testability.
- */
-export type ConfigGetter = (key: string) => unknown
+import type { RawConfigGetter as ConfigGetter } from '../utils/types'
 
 /**
  * Callback-based execFile function signature matching Node.js child_process.execFile.

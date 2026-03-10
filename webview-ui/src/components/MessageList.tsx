@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useCallback } from 'react'
+import './MessageList.css'
 import { MessageBubble } from './MessageBubble'
 import { RagIndicator } from './RagIndicator'
 import { Lean4Badge } from './Lean4Badge'
@@ -40,11 +41,13 @@ export function MessageList({
 }: MessageListProps): React.ReactElement {
   const containerRef = useRef<HTMLDivElement>(null)
 
+  // Auto-scroll to bottom when messages change (including streaming content updates)
+  const lastMsgContent = messages.length > 0 ? messages[messages.length - 1].content : ''
   useEffect(() => {
     if (containerRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight
     }
-  }, [messages])
+  }, [messages.length, lastMsgContent])
 
   const handleDismissCitation = useCallback(
     (nodeId: string, url: string) => {
