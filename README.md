@@ -1,6 +1,21 @@
 # Quiver: Math Research Agent
 
+[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/Quiver-Math.quiver-math-research-agent?label=VS%20Code%20Marketplace&color=blue)](https://marketplace.visualstudio.com/items?itemName=Quiver-Math.quiver-math-research-agent)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/Quiver-Math.quiver-math-research-agent)](https://marketplace.visualstudio.com/items?itemName=Quiver-Math.quiver-math-research-agent)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A VS Code extension that unifies the mathematical research workflow -- from idea exploration to proof development to paper writing -- in a single tool.
+
+## Install
+
+**From VS Code:** Search "Quiver Math Research Agent" in the Extensions sidebar.
+
+**From command line:**
+```bash
+code --install-extension Quiver-Math.quiver-math-research-agent
+```
+
+**From marketplace:** [Quiver: Math Research Agent](https://marketplace.visualstudio.com/items?itemName=Quiver-Math.quiver-math-research-agent)
 
 ## Features
 
