@@ -109,19 +109,34 @@ export function registerWriteHandlers(registry: MessageHandlerRegistry): void {
 
     const cts = new vscode.CancellationTokenSource()
     let fullText = ''
+    let flushTimer: ReturnType<typeof setTimeout> | null = null
+    const FLUSH_MS = 200
+
+    const flush = () => {
+      panel.postToWebview({ type: 'draftResult', latex: fullText })
+      flushTimer = null
+    }
 
     try {
       const stream = llm.sendMessage(messages, { model }, cts.token)
       for await (const chunk of stream) {
         fullText += chunk
+        // Stream partial results to the webview
+        if (!flushTimer) {
+          flushTimer = setTimeout(flush, FLUSH_MS)
+        }
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       fullText = `% Error generating draft: ${errorMessage}`
     } finally {
+      if (flushTimer) {
+        clearTimeout(flushTimer)
+      }
       cts.dispose()
     }
 
+    // Final flush with complete content
     panel.postToWebview({ type: 'draftResult', latex: fullText })
   })
 
