@@ -1,0 +1,44 @@
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: var(--vscode-editor-background);
+  color: var(--vscode-editor-foreground);
+  font-family: var(--vscode-font-family, sans-serif);
+}
+
+.tab-header {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--vscode-panel-border, #444);
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.tab-button {
+  padding: 8px 16px;
+  background: transparent;
+  color: var(--vscode-editor-foreground);
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: var(--vscode-font-family, sans-serif);
+  transition: border-bottom-color 0.15s ease;
+}
+
+.tab-button:hover {
+  background-color: var(--vscode-list-hoverBackground, rgba(255, 255, 255, 0.05));
+}
+
+.tab-button.active {
+  border-bottom-color: var(--vscode-button-background, #007acc);
+  color: var(--vscode-button-background, #007acc);
+}
+
+.tab-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}

@@ -1,0 +1,74 @@
+import * as vscode from 'vscode'
+import { VscodeLmProvider } from './llm/providers/vscode-lm'
+import { createServices } from './services'
+import { MathResearchPanel } from './webview/panel'
+import { registerChatParticipant } from './chat/participant'
+import { runOnboardingWizard } from './onboarding'
+
+export function activate(context: vscode.ExtensionContext): void {
+  try {
+    const services = createServices(context)
+
+    // Register the VS Code Language Model API provider (Copilot)
+    const vscodeLmProvider = new VscodeLmProvider()
+    services.llm.registerProvider(vscodeLmProvider)
+
+    // Restore active provider from user settings for returning users
+    const configuredProvider = vscode.workspace
+      .getConfiguration('mathAgent.llm')
+      .get<string>('provider')
+    if (configuredProvider) {
+      try {
+        services.llm.setProvider(configuredProvider)
+      } catch {
+        // Provider not registered; user will be prompted via onboarding
+      }
+    }
+
+    const openPanelCommand = vscode.commands.registerCommand(
+      'mathAgent.openPanel',
+      () => {
+        MathResearchPanel.createOrShow(context, services)
+      }
+    )
+
+    // Register command to (re-)configure provider at any time
+    const configureProviderCommand = vscode.commands.registerCommand(
+      'mathAgent.configureProvider',
+      () => runOnboardingWizard(services.llm, context)
+    )
+
+    context.subscriptions.push(openPanelCommand, configureProviderCommand)
+
+    // Register the @math chat participant with slash commands
+    registerChatParticipant(context, {
+      llmService: services.llm,
+      personaManager: services.personaManager,
+      contextBuilder: services.contextBuilder,
+      ragOrchestrator: services.ragOrchestrator,
+      arxivClient: services.arxivClient,
+    })
+
+    // Launch onboarding wizard on first activation if no provider is configured.
+    const onboardingComplete = context.globalState.get<boolean>('mathAgent.onboardingComplete')
+    const providerInspect = vscode.workspace
+      .getConfiguration('mathAgent.llm')
+      .inspect<string>('provider')
+    const hasUserConfiguredProvider =
+      providerInspect?.globalValue !== undefined ||
+      providerInspect?.workspaceValue !== undefined ||
+      providerInspect?.workspaceFolderValue !== undefined
+
+    if (!onboardingComplete && !hasUserConfiguredProvider) {
+      void runOnboardingWizard(services.llm, context)
+    }
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error)
+    vscode.window.showErrorMessage(`Math Research Agent failed to activate: ${msg}`)
+    throw error
+  }
+}
+
+export function deactivate(): void {
+  // cleanup
+}

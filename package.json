@@ -1,0 +1,212 @@
+{
+  "name": "math-research-agent",
+  "displayName": "Math Research Agent",
+  "description": "AI-powered math research assistant with branching dialogue, RAG knowledge retrieval, and paper writing",
+  "version": "0.1.0",
+  "publisher": "math-research-agent",
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:mathAgent.openPanel",
+    "onChatParticipant:math-research-agent.math"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "mathAgent.openPanel",
+        "title": "Open Math Research Studio"
+      },
+      {
+        "command": "mathAgent.configureProvider",
+        "title": "Math Research Agent: Configure LLM Provider"
+      }
+    ],
+    "chatParticipants": [
+      {
+        "id": "math-research-agent.math",
+        "name": "math",
+        "fullName": "Math Research Agent",
+        "description": "Ask math questions, explore proofs, search literature",
+        "isSticky": true,
+        "commands": [
+          {
+            "name": "search",
+            "description": "Search arXiv, Wikipedia, and nLab"
+          },
+          {
+            "name": "arxiv",
+            "description": "Search arXiv papers"
+          },
+          {
+            "name": "studio",
+            "description": "Open Math Research Studio"
+          }
+        ]
+      }
+    ],
+    "configuration": {
+      "title": "Math Research Agent",
+      "properties": {
+        "mathAgent.llm.provider": {
+          "type": "string",
+          "enum": [
+            "vscode-lm",
+            "openai",
+            "anthropic",
+            "google"
+          ],
+          "default": "openai",
+          "description": "LLM provider to use for AI interactions"
+        },
+        "mathAgent.llm.openaiModel": {
+          "type": "string",
+          "default": "gpt-5.4",
+          "description": "OpenAI model name"
+        },
+        "mathAgent.llm.anthropicModel": {
+          "type": "string",
+          "default": "claude-opus-4-6",
+          "description": "Anthropic model name"
+        },
+        "mathAgent.llm.googleModel": {
+          "type": "string",
+          "default": "gemini-3.1-pro",
+          "description": "Google model name"
+        },
+        "mathAgent.llm.entityDetectionModel": {
+          "type": "string",
+          "default": "",
+          "description": "Model to use for entity detection (empty string uses the provider default)"
+        },
+        "mathAgent.defaultPersona": {
+          "type": "string",
+          "default": "algebraist",
+          "description": "The default math persona to use for LLM interactions"
+        },
+        "mathAgent.customPersonas": {
+          "type": "array",
+          "default": [],
+          "description": "Custom persona configurations as an array of PersonaConfig objects",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique identifier for the persona"
+              },
+              "label": {
+                "type": "string",
+                "description": "Display label for the persona"
+              },
+              "systemPrompt": {
+                "type": "string",
+                "description": "System prompt for the LLM (minimum 100 characters)"
+              },
+              "preferredSources": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "arxiv",
+                    "nlab",
+                    "wikipedia"
+                  ]
+                },
+                "description": "Preferred knowledge sources for this persona"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "systemPrompt"
+            ]
+          }
+        },
+        "mathAgent.rag.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable RAG (Retrieval-Augmented Generation) for enriching conversations with knowledge from arXiv, Wikipedia, and nLab"
+        },
+        "mathAgent.rag.cacheTtlHours": {
+          "type": "number",
+          "default": 24,
+          "description": "Time-to-live in hours for cached knowledge query results"
+        },
+        "mathAgent.lean4.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable Lean4 formal verification for proof steps"
+        },
+        "mathAgent.lean4.timeoutMs": {
+          "type": "number",
+          "default": 60000,
+          "description": "Timeout in milliseconds for Lean4 verification (default: 60000)"
+        },
+        "mathAgent.multiAgent.personas": {
+          "type": "array",
+          "default": [
+            "algebraist",
+            "analyst",
+            "geometer"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "List of persona IDs to use in multi-agent mode"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "build:webview": "node esbuild.webview.js",
+    "test:unit": "mocha --require tsx src/test/**/*.test.ts --timeout 10000",
+    "test:webview": "vitest run --config webview-ui/vitest.config.ts"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/markdown-it": "^14.1.2",
+    "@types/mocha": "^10.0.10",
+    "@types/pdf-parse": "^1.1.5",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@types/sinon": "^21.0.0",
+    "@types/uuid": "^10.0.0",
+    "@types/vscode": "^1.100.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "cross-env": "^10.1.0",
+    "esbuild": "^0.27.3",
+    "eslint": "^9.0.0",
+    "jsdom": "^28.1.0",
+    "katex": "^0.16.37",
+    "markdown-it": "^14.1.1",
+    "markdown-it-texmath": "^1.0.0",
+    "mocha": "^11.7.5",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "sinon": "^21.0.2",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.18"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
+    "@google/generative-ai": "^0.24.0",
+    "cheerio": "^1.2.0",
+    "fast-xml-parser": "^5.4.2",
+    "openai": "^4.77.0",
+    "pdf-parse": "^2.4.5",
+    "uuid": "^13.0.0"
+  }
+}

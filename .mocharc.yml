@@ -1,0 +1,5 @@
+require:
+  - src/test/register.js
+  - tsx
+spec: "src/test/**/*.test.ts"
+timeout: 10000

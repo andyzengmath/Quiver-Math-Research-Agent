@@ -1,0 +1,13 @@
+{
+  "batchcomplete": "",
+  "query": {
+    "pages": {
+      "1234567": {
+        "pageid": 1234567,
+        "ns": 0,
+        "title": "Derived category",
+        "extract": "In mathematics, the derived category D(A) of an abelian category A is a construction of homological algebra introduced to refine and in a certain sense simplify the theory of derived functors defined on A. The construction proceeds on the basis that the objects of D(A) should be chain complexes in A, with two such chain complexes considered isomorphic when there is a chain map that induces an isomorphism on the level of homology of the chain complexes. Derived categories have since become indispensable also outside of algebraic geometry and algebraic topology."
+      }
+    }
+  }
+}

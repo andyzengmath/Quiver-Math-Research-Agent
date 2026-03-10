@@ -1,0 +1,104 @@
+.multi-agent-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px;
+}
+
+.multi-agent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.multi-agent-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--vscode-panel-border, #333);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--vscode-editor-background, #1e1e1e);
+}
+
+.multi-agent-card__header {
+  padding: 8px 12px;
+  background: var(--vscode-sideBar-background, #252526);
+  border-bottom: 1px solid var(--vscode-panel-border, #333);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--vscode-editor-foreground, #ccc);
+}
+
+.multi-agent-card__label {
+  display: inline-block;
+}
+
+.multi-agent-card__content {
+  padding: 10px 12px;
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--vscode-editor-foreground, #ccc);
+  overflow-y: auto;
+  max-height: 400px;
+}
+
+.multi-agent-card__content p {
+  margin: 0 0 8px;
+}
+
+.multi-agent-card__content p:last-child {
+  margin-bottom: 0;
+}
+
+.multi-agent-card__actions {
+  padding: 8px 12px;
+  border-top: 1px solid var(--vscode-panel-border, #333);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.multi-agent-card__promote-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background: var(--vscode-button-background, #0e639c);
+  color: var(--vscode-button-foreground, #fff);
+}
+
+.multi-agent-card__promote-btn:hover {
+  background: var(--vscode-button-hoverBackground, #1177bb);
+}
+
+.multi-agent-synthesis {
+  border: 1px solid var(--vscode-panel-border, #333);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--vscode-editor-background, #1e1e1e);
+}
+
+.multi-agent-synthesis__header {
+  padding: 8px 12px;
+  background: var(--vscode-sideBar-background, #252526);
+  border-bottom: 1px solid var(--vscode-panel-border, #333);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--vscode-editor-foreground, #ccc);
+}
+
+.multi-agent-synthesis__content {
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--vscode-editor-foreground, #ccc);
+}
+
+.multi-agent-synthesis__content p {
+  margin: 0 0 8px;
+}
+
+.multi-agent-synthesis__content p:last-child {
+  margin-bottom: 0;
+}
