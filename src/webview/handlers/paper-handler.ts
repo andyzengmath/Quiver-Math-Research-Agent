@@ -18,7 +18,7 @@ export function registerPaperHandler(registry: MessageHandlerRegistry): void {
     // Show QuickPick: From file or From arXiv
     const choice = await vscode.window.showQuickPick(
       [
-        { label: 'From file (PDF/TeX)', value: 'file' as const },
+        { label: 'From file (.tex)', value: 'file' as const },
         { label: 'From arXiv ID', value: 'arxiv' as const },
       ],
       { placeHolder: 'How would you like to add a paper?' }
@@ -128,7 +128,7 @@ async function handleFileAttachment(
   const uris = await vscode.window.showOpenDialog({
     canSelectMany: false,
     filters: {
-      'Papers': ['pdf', 'tex'],
+      'TeX files': ['tex'],
     },
     title: 'Select a paper to attach',
   })

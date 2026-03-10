@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { HostToWebview } from '../types'
 
-const DEBOUNCE_MS = 100
+const DEBOUNCE_MS = 250
 
 export interface UseStreamingResult {
   readonly streamingNodeId: string | null

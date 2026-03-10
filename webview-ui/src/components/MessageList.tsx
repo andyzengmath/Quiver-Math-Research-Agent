@@ -15,6 +15,7 @@ export interface MessageListProps {
   readonly messages: ReadonlyArray<Message>
   readonly onDeleteBranch?: (nodeId: string) => void
   readonly onFork?: (nodeId: string) => void
+  readonly streamingNodeId?: string | null
   readonly ragStatusByNode?: ReadonlyMap<string, RagStatus>
   readonly onDismissCitation?: (nodeId: string, url: string) => void
   readonly onOpenUrl?: (url: string) => void
@@ -28,6 +29,7 @@ export function MessageList({
   messages,
   onDeleteBranch,
   onFork,
+  streamingNodeId,
   ragStatusByNode,
   onDismissCitation,
   onOpenUrl,
@@ -71,6 +73,7 @@ export function MessageList({
               childCount={msg.childCount}
               onDeleteBranch={onDeleteBranch}
               onFork={onFork}
+              isStreaming={msg.id === streamingNodeId}
             />
             {msg.role === 'assistant' && ragStatus && (
               <RagIndicator

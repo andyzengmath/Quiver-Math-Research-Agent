@@ -451,6 +451,7 @@ export function ResearchTab(): React.ReactElement {
         messages={displayMessages}
         onFork={handleFork}
         onDeleteBranch={handleDeleteBranch}
+        streamingNodeId={streamingNodeId}
         ragStatusByNode={ragStatusByNode}
         onDismissCitation={dismissCitation}
         onOpenUrl={handleOpenUrl}
