@@ -277,6 +277,11 @@
   cursor: default;
 }
 
+.branch-sibling-chip--inactive {
+  opacity: 0.4;
+  font-size: 10px;
+}
+
 /* Stop button */
 .stop-button {
   background-color: var(--vscode-inputValidation-errorBackground, #5a1d1d);

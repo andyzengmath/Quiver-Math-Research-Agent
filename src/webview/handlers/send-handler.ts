@@ -86,6 +86,14 @@ export function registerSendHandler(registry: MessageHandlerRegistry): void {
     tree = treeManager.getTree(treeId)
     panel.setCurrentTree(tree)
 
+    // Post tree list update so TreeSelector shows the new/renamed session
+    try {
+      const entries = storage.listTrees()
+      panel.postToWebview({ type: 'treeList', trees: entries })
+    } catch {
+      // Ignore list errors
+    }
+
     // Post updated tree state to webview
     panel.postToWebview({ type: 'treeState', tree })
 

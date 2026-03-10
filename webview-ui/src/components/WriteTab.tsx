@@ -202,7 +202,7 @@ export function WriteTab(): React.ReactElement {
           value={chatInput}
           onChange={(e) => setChatInput(e.target.value)}
           onKeyDown={handleChatKeyDown}
-          placeholder="Enter a topic or branch node ID to draft a section... (Shift+Enter for newline)"
+          placeholder="Describe what to draft, e.g. 'Write the derived geometry section' (uses current research as context)"
           rows={3}
         />
         <button

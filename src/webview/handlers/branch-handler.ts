@@ -1,3 +1,4 @@
+import * as vscode from 'vscode'
 import { MessageHandlerRegistry } from '../message-handler'
 import { WebviewToHost } from '../protocol'
 import type { MathResearchPanel } from '../panel'
@@ -52,8 +53,10 @@ export function registerBranchHandler(registry: MessageHandlerRegistry): void {
 
     try {
       treeManager.forkFrom(treeId, msg.nodeId)
-    } catch {
-      // fork failed silently
+    } catch (error) {
+      void vscode.window.showErrorMessage(
+        `Fork failed: ${error instanceof Error ? error.message : String(error)}`
+      )
       return
     }
 
@@ -85,8 +88,10 @@ export function registerBranchHandler(registry: MessageHandlerRegistry): void {
 
     try {
       treeManager.deleteBranch(treeId, msg.nodeId)
-    } catch {
-      // deleteBranch failed silently
+    } catch (error) {
+      void vscode.window.showErrorMessage(
+        `Delete branch failed: ${error instanceof Error ? error.message : String(error)}`
+      )
       return
     }
 

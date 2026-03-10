@@ -4,7 +4,8 @@
       "WebSearch",
       "Bash(gh repo:*)",
       "WebFetch(domain:github.com)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(gh release:*)"
     ]
   }
 }

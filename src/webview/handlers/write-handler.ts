@@ -71,19 +71,25 @@ export function registerWriteHandlers(registry: MessageHandlerRegistry): void {
     const messages: LlmMessage[] = []
     messages.push({ role: 'system', content: DRAFT_SYSTEM_PROMPT })
 
-    // Try to build context from the branch node if a tree is available
-    if (tree && tree.nodes[msg.branchNodeId]) {
-      const contextMessages = contextBuilder.build(tree, msg.branchNodeId)
+    // Try to build context from the specified branch node, or from the active branch
+    const branchNodeId = (tree && tree.nodes[msg.branchNodeId])
+      ? msg.branchNodeId
+      : (tree && tree.activePath.length > 0)
+        ? tree.activePath[tree.activePath.length - 1]
+        : null
+
+    if (tree && branchNodeId && tree.nodes[branchNodeId]) {
+      const contextMessages = contextBuilder.build(tree, branchNodeId)
       // Skip the system prompt from contextBuilder (index 0), use the rest as context
       for (let i = 1; i < contextMessages.length; i++) {
         messages.push(contextMessages[i])
       }
       messages.push({
         role: 'user',
-        content: 'Based on the above research discussion, draft a LaTeX section with appropriate theorem/proof environments.',
+        content: `Based on the above research discussion, draft a LaTeX section. User instructions: ${msg.branchNodeId}`,
       })
     } else {
-      // If no tree context, use the branchNodeId as a topic
+      // No tree context at all — use the input as a topic
       messages.push({
         role: 'user',
         content: `Draft a LaTeX section about: ${msg.branchNodeId}`,

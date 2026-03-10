@@ -416,7 +416,7 @@ export function ResearchTab(): React.ReactElement {
             <button
               key={sib.nodeId}
               type="button"
-              className={`branch-sibling-chip ${sib.isActive ? 'branch-sibling-chip--active' : ''}`}
+              className={`branch-sibling-chip ${sib.isActive ? 'branch-sibling-chip--active' : 'branch-sibling-chip--inactive'}`}
               onClick={() => {
                 if (!sib.isActive) {
                   handleSiblingSwitch(sib.nodeId)
