@@ -252,6 +252,20 @@ export function ResearchTab(): React.ReactElement {
     [postMessage]
   )
 
+  const handleFork = useCallback(
+    (nodeId: string) => {
+      postMessage({ type: 'fork', nodeId })
+    },
+    [postMessage]
+  )
+
+  const handleDeleteBranch = useCallback(
+    (nodeId: string) => {
+      postMessage({ type: 'deleteBranch', nodeId })
+    },
+    [postMessage]
+  )
+
   const handleOpenUrl = useCallback(
     (url: string) => {
       postMessage({ type: 'openUrl', url })
@@ -328,6 +342,7 @@ export function ResearchTab(): React.ReactElement {
       id: m.id,
       role: m.role,
       content: m.content,
+      childCount: tree ? (tree.nodes[m.id]?.children?.length ?? 0) : 0,
     }))
 
     // If currently streaming, add/replace the streaming assistant message
@@ -434,6 +449,8 @@ export function ResearchTab(): React.ReactElement {
       />
       <MessageList
         messages={displayMessages}
+        onFork={handleFork}
+        onDeleteBranch={handleDeleteBranch}
         ragStatusByNode={ragStatusByNode}
         onDismissCitation={dismissCitation}
         onOpenUrl={handleOpenUrl}

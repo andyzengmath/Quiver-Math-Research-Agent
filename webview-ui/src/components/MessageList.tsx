@@ -14,6 +14,7 @@ export interface Message {
 export interface MessageListProps {
   readonly messages: ReadonlyArray<Message>
   readonly onDeleteBranch?: (nodeId: string) => void
+  readonly onFork?: (nodeId: string) => void
   readonly ragStatusByNode?: ReadonlyMap<string, RagStatus>
   readonly onDismissCitation?: (nodeId: string, url: string) => void
   readonly onOpenUrl?: (url: string) => void
@@ -26,6 +27,7 @@ export interface MessageListProps {
 export function MessageList({
   messages,
   onDeleteBranch,
+  onFork,
   ragStatusByNode,
   onDismissCitation,
   onOpenUrl,
@@ -68,6 +70,7 @@ export function MessageList({
               nodeId={msg.id}
               childCount={msg.childCount}
               onDeleteBranch={onDeleteBranch}
+              onFork={onFork}
             />
             {msg.role === 'assistant' && ragStatus && (
               <RagIndicator

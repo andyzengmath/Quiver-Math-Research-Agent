@@ -84,14 +84,24 @@ export class PaperManager {
   }
 
   private async attachPdfFile(filePath: string): Promise<AttachedPaper> {
-    // Lazy import pdf-parse to avoid DOMMatrix crash at extension load time
-    // pdf-parse pulls in canvas/browser APIs that fail in Node.js extension host
+    // pdf-parse requires browser APIs (DOMMatrix, canvas) that don't exist in VS Code's
+    // Node.js extension host. Lazy import to avoid crashing at startup, but still
+    // provide a clear error if pdf-parse isn't available.
     let parser: { getText(): Promise<{ text: string }>; destroy(): Promise<void> } | undefined
+    let PDFParseClass: typeof import('pdf-parse').PDFParse
     try {
-      const { PDFParse } = await import('pdf-parse')
+      const mod = await import('pdf-parse')
+      PDFParseClass = mod.PDFParse
+    } catch {
+      throw new PdfExtractionError(
+        filePath,
+        'PDF parsing is not available in this environment. Please use a .tex file instead, or paste an arXiv ID.'
+      )
+    }
+    try {
       const buffer = fs.readFileSync(filePath)
       const data = new Uint8Array(buffer)
-      parser = new PDFParse({ data })
+      parser = new PDFParseClass({ data })
       const textResult = await parser.getText()
       const extractedText = textResult.text
 
