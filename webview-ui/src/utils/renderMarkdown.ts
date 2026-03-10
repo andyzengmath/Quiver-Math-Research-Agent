@@ -18,6 +18,12 @@ md.use(texmath, {
   },
 })
 
+const mdPlain = markdownit({
+  html: false,
+  linkify: true,
+  typographer: false,
+})
+
 /**
  * Render a markdown string with LaTeX math support via KaTeX.
  * Inline math uses `$...$` and display math uses `$$...$$`.
@@ -28,4 +34,16 @@ export function renderMathMarkdown(text: string): string {
     return ''
   }
   return md.render(text)
+}
+
+/**
+ * Render markdown WITHOUT KaTeX math processing.
+ * Use during streaming to avoid errors from incomplete LaTeX expressions
+ * like unclosed `$` delimiters that cause the parser to swallow remaining text.
+ */
+export function renderPlainMarkdown(text: string): string {
+  if (!text) {
+    return ''
+  }
+  return mdPlain.render(text)
 }

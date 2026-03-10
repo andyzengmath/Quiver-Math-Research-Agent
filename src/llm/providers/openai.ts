@@ -54,6 +54,10 @@ export class OpenAiProvider implements LlmProvider {
       requestParams.temperature = options.temperature
     }
 
+    if (options.reasoningEffort) {
+      (requestParams as unknown as Record<string, unknown>).reasoning_effort = options.reasoningEffort
+    }
+
     let stream: AsyncIterable<OpenAI.Chat.ChatCompletionChunk>
     try {
       stream = await client.chat.completions.create(requestParams)

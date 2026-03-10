@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useCallback } from 'react'
+import './MessageList.css'
 import { MessageBubble } from './MessageBubble'
 import { RagIndicator } from './RagIndicator'
 import { Lean4Badge } from './Lean4Badge'
@@ -14,6 +15,8 @@ export interface Message {
 export interface MessageListProps {
   readonly messages: ReadonlyArray<Message>
   readonly onDeleteBranch?: (nodeId: string) => void
+  readonly onFork?: (nodeId: string) => void
+  readonly streamingNodeId?: string | null
   readonly ragStatusByNode?: ReadonlyMap<string, RagStatus>
   readonly onDismissCitation?: (nodeId: string, url: string) => void
   readonly onOpenUrl?: (url: string) => void
@@ -26,6 +29,8 @@ export interface MessageListProps {
 export function MessageList({
   messages,
   onDeleteBranch,
+  onFork,
+  streamingNodeId,
   ragStatusByNode,
   onDismissCitation,
   onOpenUrl,
@@ -36,11 +41,13 @@ export function MessageList({
 }: MessageListProps): React.ReactElement {
   const containerRef = useRef<HTMLDivElement>(null)
 
+  // Auto-scroll to bottom when messages change (including streaming content updates)
+  const lastMsgContent = messages.length > 0 ? messages[messages.length - 1].content : ''
   useEffect(() => {
     if (containerRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight
     }
-  }, [messages])
+  }, [messages.length, lastMsgContent])
 
   const handleDismissCitation = useCallback(
     (nodeId: string, url: string) => {
@@ -68,6 +75,8 @@ export function MessageList({
               nodeId={msg.id}
               childCount={msg.childCount}
               onDeleteBranch={onDeleteBranch}
+              onFork={onFork}
+              isStreaming={msg.id === streamingNodeId}
             />
             {msg.role === 'assistant' && ragStatus && (
               <RagIndicator

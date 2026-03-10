@@ -4,9 +4,9 @@ import type { MathResearchPanel } from './panel'
 export type MessageHandler = (msg: WebviewToHost, panel: MathResearchPanel) => Promise<void>
 
 export class MessageHandlerRegistry {
-  private readonly handlers: Map<string, MessageHandler> = new Map()
+  private readonly handlers: Map<WebviewToHost['type'], MessageHandler> = new Map()
 
-  register(type: string, handler: MessageHandler): void {
+  register(type: WebviewToHost['type'], handler: MessageHandler): void {
     this.handlers.set(type, handler)
   }
 

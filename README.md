@@ -1,4 +1,4 @@
-# Math Research Agent
+# Quiver: Math Research Agent
 
 A VS Code extension that unifies the mathematical research workflow -- from idea exploration to proof development to paper writing -- in a single tool.
 
@@ -53,8 +53,8 @@ API keys are stored securely in VS Code's SecretStorage. A guided onboarding wiz
 ### Building from Source
 
 ```bash
-git clone https://github.com/andyzengmath/Math-research-agent.git
-cd Math-research-agent
+git clone https://github.com/andyzengmath/Quiver-Math-Research-Agent.git
+cd Quiver-Math-Research-Agent
 npm install
 npm run compile
 npm run build:webview

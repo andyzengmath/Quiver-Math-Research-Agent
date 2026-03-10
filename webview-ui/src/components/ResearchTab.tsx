@@ -14,8 +14,6 @@ import { useStreaming } from '../hooks/useStreaming'
 import { useMultiAgent } from '../hooks/useMultiAgent'
 import { useRagStatus } from '../hooks/useRagStatus'
 import type { DialogueNode, DialogueTree, Lean4Result, TreeListItem } from '../types'
-import './MessageList.css'
-import './RagComponents.css'
 
 const MAX_VISIBLE_SIBLINGS = 5
 
@@ -252,6 +250,20 @@ export function ResearchTab(): React.ReactElement {
     [postMessage]
   )
 
+  const handleFork = useCallback(
+    (nodeId: string) => {
+      postMessage({ type: 'fork', nodeId })
+    },
+    [postMessage]
+  )
+
+  const handleDeleteBranch = useCallback(
+    (nodeId: string) => {
+      postMessage({ type: 'deleteBranch', nodeId })
+    },
+    [postMessage]
+  )
+
   const handleOpenUrl = useCallback(
     (url: string) => {
       postMessage({ type: 'openUrl', url })
@@ -299,8 +311,7 @@ export function ResearchTab(): React.ReactElement {
       // Fork from the last node on the active path, then send the promoted content
       if (tree && tree.activePath.length > 0) {
         const lastNodeId = tree.activePath[tree.activePath.length - 1]
-        postMessage({ type: 'fork', nodeId: lastNodeId })
-        postMessage({ type: 'send', content })
+        postMessage({ type: 'forkAndSend', nodeId: lastNodeId, content })
       }
     },
     [postMessage, tree]
@@ -328,6 +339,7 @@ export function ResearchTab(): React.ReactElement {
       id: m.id,
       role: m.role,
       content: m.content,
+      childCount: tree ? (tree.nodes[m.id]?.children?.length ?? 0) : 0,
     }))
 
     // If currently streaming, add/replace the streaming assistant message
@@ -404,7 +416,7 @@ export function ResearchTab(): React.ReactElement {
             <button
               key={sib.nodeId}
               type="button"
-              className={`branch-sibling-chip ${sib.isActive ? 'branch-sibling-chip--active' : ''}`}
+              className={`branch-sibling-chip ${sib.isActive ? 'branch-sibling-chip--active' : 'branch-sibling-chip--inactive'}`}
               onClick={() => {
                 if (!sib.isActive) {
                   handleSiblingSwitch(sib.nodeId)
@@ -434,6 +446,9 @@ export function ResearchTab(): React.ReactElement {
       />
       <MessageList
         messages={displayMessages}
+        onFork={handleFork}
+        onDeleteBranch={handleDeleteBranch}
+        streamingNodeId={streamingNodeId}
         ragStatusByNode={ragStatusByNode}
         onDismissCitation={dismissCitation}
         onOpenUrl={handleOpenUrl}

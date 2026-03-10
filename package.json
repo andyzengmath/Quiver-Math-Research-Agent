@@ -1,9 +1,9 @@
 {
-  "name": "math-research-agent",
-  "displayName": "Math Research Agent",
+  "name": "quiver-math-research-agent",
+  "displayName": "Quiver: Math Research Agent",
   "description": "AI-powered math research assistant with branching dialogue, RAG knowledge retrieval, and paper writing",
   "version": "0.1.0",
-  "publisher": "math-research-agent",
+  "publisher": "andyzengmath",
   "engines": {
     "vscode": "^1.100.0"
   },
@@ -12,6 +12,7 @@
   ],
   "activationEvents": [
     "onCommand:mathAgent.openPanel",
+    "onCommand:mathAgent.configureProvider",
     "onChatParticipant:math-research-agent.math"
   ],
   "main": "./out/extension.js",
@@ -19,11 +20,13 @@
     "commands": [
       {
         "command": "mathAgent.openPanel",
-        "title": "Open Math Research Studio"
+        "title": "Open Panel",
+        "category": "Quiver"
       },
       {
         "command": "mathAgent.configureProvider",
-        "title": "Math Research Agent: Configure LLM Provider"
+        "title": "Configure LLM Provider",
+        "category": "Quiver"
       }
     ],
     "chatParticipants": [
@@ -82,6 +85,12 @@
           "type": "string",
           "default": "",
           "description": "Model to use for entity detection (empty string uses the provider default)"
+        },
+        "mathAgent.llm.reasoningEffort": {
+          "type": "string",
+          "enum": ["low", "medium", "high"],
+          "default": "high",
+          "description": "Reasoning/thinking effort level for LLM responses (supported by GPT-5.4, Claude with extended thinking)"
         },
         "mathAgent.defaultPersona": {
           "type": "string",

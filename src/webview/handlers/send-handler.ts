@@ -59,7 +59,11 @@ export function registerSendHandler(registry: MessageHandlerRegistry): void {
     // Get or create a tree
     let tree = panel.getCurrentTree()
     if (!tree) {
-      tree = treeManager.createTree('New Research')
+      // Auto-generate session title from first message (first 50 chars)
+      const autoTitle = msg.content.length > 50
+        ? msg.content.substring(0, 50).trim() + '...'
+        : msg.content.trim()
+      tree = treeManager.createTree(autoTitle || 'New Research')
       panel.setCurrentTree(tree)
     }
 
@@ -81,6 +85,14 @@ export function registerSendHandler(registry: MessageHandlerRegistry): void {
     // Refresh our local reference after mutation
     tree = treeManager.getTree(treeId)
     panel.setCurrentTree(tree)
+
+    // Post tree list update so TreeSelector shows the new/renamed session
+    try {
+      const entries = storage.listTrees()
+      panel.postToWebview({ type: 'treeList', trees: entries })
+    } catch {
+      // Ignore list errors
+    }
 
     // Post updated tree state to webview
     panel.postToWebview({ type: 'treeState', tree })
@@ -200,6 +212,7 @@ export function registerSendHandler(registry: MessageHandlerRegistry): void {
     const provider = config.get<string>('provider', 'openai')
     const modelKey = `${provider}Model`
     const model = config.get<string>(modelKey, '')
+    const reasoningEffort = config.get<'low' | 'medium' | 'high'>('reasoningEffort', 'medium')
 
     // Ensure the active provider is set
     try {
@@ -213,7 +226,24 @@ export function registerSendHandler(registry: MessageHandlerRegistry): void {
     let wasCancelled = false
 
     try {
-      const stream = llm.sendMessage(llmMessages, { model }, cts.token)
+      const stream = llm.sendMessage(llmMessages, { model, reasoningEffort }, cts.token)
+
+      // Batch streaming chunks to avoid flooding the webview message queue
+      let pendingChunks = ''
+      let flushTimer: ReturnType<typeof setTimeout> | null = null
+      const FLUSH_INTERVAL_MS = 150
+
+      const flushChunks = () => {
+        if (pendingChunks && assistantNodeId) {
+          panel.postToWebview({
+            type: 'streamChunk',
+            nodeId: assistantNodeId,
+            text: pendingChunks,
+          })
+          pendingChunks = ''
+        }
+        flushTimer = null
+      }
 
       for await (const chunk of stream) {
         if (cts.token.isCancellationRequested) {
@@ -222,6 +252,7 @@ export function registerSendHandler(registry: MessageHandlerRegistry): void {
         }
 
         fullText += chunk
+        pendingChunks += chunk
 
         // Create assistant node on first chunk if not yet created
         if (!assistantNodeId) {
@@ -238,12 +269,17 @@ export function registerSendHandler(registry: MessageHandlerRegistry): void {
           assistantNodeId = assistantNode.id
         }
 
-        panel.postToWebview({
-          type: 'streamChunk',
-          nodeId: assistantNodeId,
-          text: chunk,
-        })
+        // Flush on a timer to batch rapid chunks
+        if (!flushTimer) {
+          flushTimer = setTimeout(flushChunks, FLUSH_INTERVAL_MS)
+        }
       }
+
+      // Flush any remaining chunks
+      if (flushTimer) {
+        clearTimeout(flushTimer)
+      }
+      flushChunks()
     } catch (error) {
       if (cts.token.isCancellationRequested) {
         wasCancelled = true
@@ -261,15 +297,22 @@ export function registerSendHandler(registry: MessageHandlerRegistry): void {
       const currentTree = treeManager.getTree(treeId)
       const assistantNode = currentTree.nodes[assistantNodeId]
       if (assistantNode) {
-        currentTree.nodes[assistantNodeId] = {
-          ...assistantNode,
-          content: fullText,
-          metadata: {
-            ...assistantNode.metadata,
-            ...(wasCancelled ? { incomplete: true } : {}),
-            ...(ragCitations.length > 0 ? { sources: ragCitations } : {}),
+        const updatedTree = {
+          ...currentTree,
+          nodes: {
+            ...currentTree.nodes,
+            [assistantNodeId]: {
+              ...assistantNode,
+              content: fullText,
+              metadata: {
+                ...assistantNode.metadata,
+                ...(wasCancelled ? { incomplete: true } : {}),
+                ...(ragCitations.length > 0 ? { sources: ragCitations } : {}),
+              },
+            },
           },
         }
+        panel.setCurrentTree(updatedTree)
       }
 
       panel.postToWebview({
@@ -315,16 +358,16 @@ export function registerSendHandler(registry: MessageHandlerRegistry): void {
     }
 
     // Save tree and post updated state
-    tree = treeManager.getTree(treeId)
-    panel.setCurrentTree(tree)
+    // Use panel's current tree (which may have immutable updates) over treeManager's copy
+    const finalTree = panel.getCurrentTree() ?? treeManager.getTree(treeId)
 
     try {
-      storage.saveTree(tree)
+      storage.saveTree(finalTree)
     } catch {
       // Storage errors should not crash the handler
     }
 
-    panel.postToWebview({ type: 'treeState', tree })
+    panel.postToWebview({ type: 'treeState', tree: finalTree })
 
     // Cleanup cancellation source
     panel.cancelActiveStream()

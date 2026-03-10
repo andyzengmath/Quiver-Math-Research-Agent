@@ -1,5 +1,5 @@
 import * as path from 'path'
-import * as fs from 'fs'
+import * as fs from 'fs/promises'
 import * as vscode from 'vscode'
 import { MessageHandlerRegistry } from '../message-handler'
 import { WebviewToHost } from '../protocol'
@@ -71,19 +71,25 @@ export function registerWriteHandlers(registry: MessageHandlerRegistry): void {
     const messages: LlmMessage[] = []
     messages.push({ role: 'system', content: DRAFT_SYSTEM_PROMPT })
 
-    // Try to build context from the branch node if a tree is available
-    if (tree && tree.nodes[msg.branchNodeId]) {
-      const contextMessages = contextBuilder.build(tree, msg.branchNodeId)
+    // Try to build context from the specified branch node, or from the active branch
+    const branchNodeId = (tree && tree.nodes[msg.branchNodeId])
+      ? msg.branchNodeId
+      : (tree && tree.activePath.length > 0)
+        ? tree.activePath[tree.activePath.length - 1]
+        : null
+
+    if (tree && branchNodeId && tree.nodes[branchNodeId]) {
+      const contextMessages = contextBuilder.build(tree, branchNodeId)
       // Skip the system prompt from contextBuilder (index 0), use the rest as context
       for (let i = 1; i < contextMessages.length; i++) {
         messages.push(contextMessages[i])
       }
       messages.push({
         role: 'user',
-        content: 'Based on the above research discussion, draft a LaTeX section with appropriate theorem/proof environments.',
+        content: `Based on the above research discussion, draft a LaTeX section. User instructions: ${msg.branchNodeId}`,
       })
     } else {
-      // If no tree context, use the branchNodeId as a topic
+      // No tree context at all — use the input as a topic
       messages.push({
         role: 'user',
         content: `Draft a LaTeX section about: ${msg.branchNodeId}`,
@@ -103,19 +109,34 @@ export function registerWriteHandlers(registry: MessageHandlerRegistry): void {
 
     const cts = new vscode.CancellationTokenSource()
     let fullText = ''
+    let flushTimer: ReturnType<typeof setTimeout> | null = null
+    const FLUSH_MS = 200
+
+    const flush = () => {
+      panel.postToWebview({ type: 'draftResult', latex: fullText })
+      flushTimer = null
+    }
 
     try {
       const stream = llm.sendMessage(messages, { model }, cts.token)
       for await (const chunk of stream) {
         fullText += chunk
+        // Stream partial results to the webview
+        if (!flushTimer) {
+          flushTimer = setTimeout(flush, FLUSH_MS)
+        }
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       fullText = `% Error generating draft: ${errorMessage}`
     } finally {
+      if (flushTimer) {
+        clearTimeout(flushTimer)
+      }
       cts.dispose()
     }
 
+    // Final flush with complete content
     panel.postToWebview({ type: 'draftResult', latex: fullText })
   })
 
@@ -164,14 +185,6 @@ export function registerWriteHandlers(registry: MessageHandlerRegistry): void {
     }
   })
 
-  // Handler: writeChat (write-tab chat with document context)
-  registry.register('writeChat', async (msg: WebviewToHost, panel: MathResearchPanel) => {
-    // writeChat is not in the WebviewToHost union yet, but handle gracefully
-    // The chat input in the Write tab reuses draftFromBranch for now
-    if (msg.type !== 'draftFromBranch') {
-      return
-    }
-  })
 }
 
 /**
@@ -206,7 +219,7 @@ async function appendBibTexEntries(
   let bibFilePath: string | null = null
 
   try {
-    const texContent = fs.readFileSync(texFilePath, 'utf-8')
+    const texContent = await fs.readFile(texFilePath, 'utf-8')
     const bibPaths = findBibPaths(texContent)
     if (bibPaths.length > 0) {
       bibFilePath = path.resolve(texDir, bibPaths[0].path)
@@ -230,7 +243,7 @@ async function appendBibTexEntries(
   // Read existing bib entries to avoid duplicates
   let existingBib = ''
   try {
-    existingBib = fs.readFileSync(bibFilePath, 'utf-8')
+    existingBib = await fs.readFile(bibFilePath, 'utf-8')
   } catch {
     // File might not exist yet - that's OK, we'll create it
   }

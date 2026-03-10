@@ -2,10 +2,8 @@ import * as vscode from 'vscode'
 import { MessageHandlerRegistry } from '../message-handler'
 import { WebviewToHost } from '../protocol'
 import type { MathResearchPanel } from '../panel'
-import { PaperManager, PdfExtractionError } from '../../papers/manager'
+import { PdfExtractionError } from '../../papers/manager'
 import type { AttachedPaper } from '../../dialogue/types'
-
-const paperManager = new PaperManager()
 
 export function registerPaperHandler(registry: MessageHandlerRegistry): void {
   registry.register('addPaper', async (_msg: WebviewToHost, panel: MathResearchPanel) => {
@@ -18,7 +16,7 @@ export function registerPaperHandler(registry: MessageHandlerRegistry): void {
     // Show QuickPick: From file or From arXiv
     const choice = await vscode.window.showQuickPick(
       [
-        { label: 'From file (PDF/TeX)', value: 'file' as const },
+        { label: 'From file (.tex)', value: 'file' as const },
         { label: 'From arXiv ID', value: 'arxiv' as const },
       ],
       { placeHolder: 'How would you like to add a paper?' }
@@ -46,19 +44,21 @@ export function registerPaperHandler(registry: MessageHandlerRegistry): void {
     const currentTree = treeManager.getTree(treeId)
     const existingPapers = currentTree.attachedPapers ?? []
 
-    // Mutate the tree to add the paper (TreeManager stores trees by reference)
-    currentTree.attachedPapers = [...existingPapers, paper]
-    currentTree.updatedAt = Date.now()
+    const updatedTree = {
+      ...currentTree,
+      attachedPapers: [...existingPapers, paper],
+      updatedAt: Date.now(),
+    }
 
-    panel.setCurrentTree(currentTree)
+    panel.setCurrentTree(updatedTree)
 
     try {
-      storage.saveTree(currentTree)
+      storage.saveTree(updatedTree)
     } catch {
       // Storage errors should not crash the handler
     }
 
-    panel.postToWebview({ type: 'treeState', tree: currentTree })
+    panel.postToWebview({ type: 'treeState', tree: updatedTree })
   })
 
   registry.register('removePaper', async (msg: WebviewToHost, panel: MathResearchPanel) => {
@@ -76,18 +76,21 @@ export function registerPaperHandler(registry: MessageHandlerRegistry): void {
     const currentTree = treeManager.getTree(treeId)
     const existingPapers = currentTree.attachedPapers ?? []
 
-    currentTree.attachedPapers = existingPapers.filter((p) => p.id !== msg.paperId)
-    currentTree.updatedAt = Date.now()
+    const updatedTree = {
+      ...currentTree,
+      attachedPapers: existingPapers.filter((p) => p.id !== msg.paperId),
+      updatedAt: Date.now(),
+    }
 
-    panel.setCurrentTree(currentTree)
+    panel.setCurrentTree(updatedTree)
 
     try {
-      storage.saveTree(currentTree)
+      storage.saveTree(updatedTree)
     } catch {
       // Storage errors should not crash the handler
     }
 
-    panel.postToWebview({ type: 'treeState', tree: currentTree })
+    panel.postToWebview({ type: 'treeState', tree: updatedTree })
   })
 
   registry.register('setPaperScope', async (msg: WebviewToHost, panel: MathResearchPanel) => {
@@ -105,20 +108,23 @@ export function registerPaperHandler(registry: MessageHandlerRegistry): void {
     const currentTree = treeManager.getTree(treeId)
     const existingPapers = currentTree.attachedPapers ?? []
 
-    currentTree.attachedPapers = existingPapers.map((p) =>
-      p.id === msg.paperId ? { ...p, scope: msg.scope } : p
-    )
-    currentTree.updatedAt = Date.now()
+    const updatedTree = {
+      ...currentTree,
+      attachedPapers: existingPapers.map((p) =>
+        p.id === msg.paperId ? { ...p, scope: msg.scope } : p
+      ),
+      updatedAt: Date.now(),
+    }
 
-    panel.setCurrentTree(currentTree)
+    panel.setCurrentTree(updatedTree)
 
     try {
-      storage.saveTree(currentTree)
+      storage.saveTree(updatedTree)
     } catch {
       // Storage errors should not crash the handler
     }
 
-    panel.postToWebview({ type: 'treeState', tree: currentTree })
+    panel.postToWebview({ type: 'treeState', tree: updatedTree })
   })
 }
 
@@ -128,7 +134,7 @@ async function handleFileAttachment(
   const uris = await vscode.window.showOpenDialog({
     canSelectMany: false,
     filters: {
-      'Papers': ['pdf', 'tex'],
+      'TeX files': ['tex'],
     },
     title: 'Select a paper to attach',
   })
@@ -140,7 +146,7 @@ async function handleFileAttachment(
   const filePath = uris[0].fsPath
 
   try {
-    return await paperManager.attachFromFile(filePath)
+    return await panel.services.paperManager.attachFromFile(filePath)
   } catch (error) {
     if (error instanceof PdfExtractionError) {
       void vscode.window.showErrorMessage(
@@ -177,7 +183,7 @@ async function handleArxivAttachment(
   const { arxivClient } = panel.services
 
   try {
-    return await paperManager.attachFromArxiv(arxivId, arxivClient)
+    return await panel.services.paperManager.attachFromArxiv(arxivId, arxivClient)
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error)
     void vscode.window.showErrorMessage(

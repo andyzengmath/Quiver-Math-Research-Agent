@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react'
-import { renderMathMarkdown } from '../utils/renderMarkdown'
+import { renderMathMarkdown, renderPlainMarkdown } from '../utils/renderMarkdown'
 import { ContextMenu } from './ContextMenu'
 
 export interface MessageBubbleProps {
@@ -8,6 +8,8 @@ export interface MessageBubbleProps {
   readonly nodeId?: string
   readonly childCount?: number
   readonly onDeleteBranch?: (nodeId: string) => void
+  readonly onFork?: (nodeId: string) => void
+  readonly isStreaming?: boolean
 }
 
 export function MessageBubble({
@@ -16,8 +18,11 @@ export function MessageBubble({
   nodeId,
   childCount,
   onDeleteBranch,
+  onFork,
+  isStreaming,
 }: MessageBubbleProps): React.ReactElement {
-  const rendered = renderMathMarkdown(content)
+  // During streaming, use plain markdown to avoid KaTeX errors from incomplete LaTeX
+  const rendered = isStreaming ? renderPlainMarkdown(content) : renderMathMarkdown(content)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
 
   const handleContextMenu = useCallback(
@@ -53,6 +58,12 @@ export function MessageBubble({
     setContextMenu(null)
   }, [])
 
+  const handleFork = useCallback(() => {
+    if (nodeId && onFork) {
+      onFork(nodeId)
+    }
+  }, [nodeId, onFork])
+
   return (
     <div
       className={`message-bubble ${role === 'user' ? 'user-message' : 'assistant-message'}`}
@@ -62,6 +73,16 @@ export function MessageBubble({
         className="message-content"
         dangerouslySetInnerHTML={{ __html: rendered }}
       />
+      {nodeId && onFork && (
+        <button
+          className="fork-button"
+          onClick={handleFork}
+          title="Branch from here"
+          type="button"
+        >
+          &#x2442;
+        </button>
+      )}
       {contextMenu && (
         <ContextMenu
           x={contextMenu.x}

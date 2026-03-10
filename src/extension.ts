@@ -6,8 +6,12 @@ import { registerChatParticipant } from './chat/participant'
 import { runOnboardingWizard } from './onboarding'
 
 export function activate(context: vscode.ExtensionContext): void {
+  const outputChannel = vscode.window.createOutputChannel('Math Research Agent')
+  outputChannel.appendLine('Math Research Agent: activating...')
+
   try {
     const services = createServices(context)
+    outputChannel.appendLine('Math Research Agent: services created')
 
     // Register the VS Code Language Model API provider (Copilot)
     const vscodeLmProvider = new VscodeLmProvider()
@@ -40,6 +44,8 @@ export function activate(context: vscode.ExtensionContext): void {
 
     context.subscriptions.push(openPanelCommand, configureProviderCommand)
 
+    outputChannel.appendLine('Math Research Agent: commands registered, registering chat participant...')
+
     // Register the @math chat participant with slash commands
     registerChatParticipant(context, {
       llmService: services.llm,
@@ -59,10 +65,15 @@ export function activate(context: vscode.ExtensionContext): void {
       providerInspect?.workspaceValue !== undefined ||
       providerInspect?.workspaceFolderValue !== undefined
 
+    outputChannel.appendLine('Math Research Agent: chat participant registered')
+
     if (!onboardingComplete && !hasUserConfiguredProvider) {
       void runOnboardingWizard(services.llm, context)
     }
+
+    outputChannel.appendLine('Math Research Agent: activation complete')
   } catch (error) {
+    outputChannel.appendLine(`Math Research Agent: activation FAILED - ${error}`)
     const msg = error instanceof Error ? error.message : String(error)
     vscode.window.showErrorMessage(`Math Research Agent failed to activate: ${msg}`)
     throw error
