@@ -11,6 +11,7 @@ import { registerModelHandler } from './handlers/model-handler'
 import { registerTreeHandler } from './handlers/tree-handler'
 import { registerPersonaHandlers } from './handlers/persona-handler'
 import { registerWriteHandlers } from './handlers/write-handler'
+import { registerExportHandlers } from './handlers/export-handler'
 
 export class MathResearchPanel {
   public static readonly viewType = 'mathAgent.researchPanel'
@@ -88,6 +89,7 @@ export class MathResearchPanel {
     registerTreeHandler(this.registry)
     registerPersonaHandlers(this.registry)
     registerWriteHandlers(this.registry)
+    registerExportHandlers(this.registry)
   }
 
   private registerBuiltInHandlers(): void {
