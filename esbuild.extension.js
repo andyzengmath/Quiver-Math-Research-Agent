@@ -8,7 +8,7 @@ esbuild
     format: 'cjs',
     platform: 'node',
     target: 'node18',
-    external: ['vscode', 'pdf-parse', 'canvas'],
+    external: ['vscode', 'pdf-parse', 'canvas', '@azure/identity'],
     sourcemap: true,
     minify: false,
   })
