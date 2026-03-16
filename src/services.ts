@@ -9,6 +9,7 @@ import { LlmService } from './llm/service'
 import { AnthropicProvider } from './llm/providers/anthropic'
 import { OpenAiProvider } from './llm/providers/openai'
 import { GoogleProvider } from './llm/providers/google'
+import { AzureOpenAiProvider } from './llm/providers/azure-openai'
 import { StorageService } from './dialogue/storage'
 import { ContextBuilder } from './dialogue/context'
 import { Lean4Service } from './lean4/service'
@@ -49,6 +50,7 @@ export function createServices(context: vscode.ExtensionContext): Services {
   llm.registerProvider(anthropicProvider)
   llm.registerProvider(new OpenAiProvider(llm))
   llm.registerProvider(new GoogleProvider(llm))
+  llm.registerProvider(new AzureOpenAiProvider(llm))
 
   const workspaceFolders = vscode.workspace.workspaceFolders
   let workspaceRoot = workspaceFolders?.[0]?.uri.fsPath ?? ''
