@@ -31,6 +31,9 @@ export type WebviewToHost =
   | { readonly type: 'setRagEnabled'; readonly enabled: boolean }
   | { readonly type: 'openUrl'; readonly url: string }
   | { readonly type: 'forkAndSend'; readonly nodeId: string; readonly content: string }
+  | { readonly type: 'exportMarkdown'; readonly mode: 'active-branch' | 'full-tree' | 'from-node'; readonly fromNodeId?: string }
+  | { readonly type: 'exportHtml'; readonly mode: 'active-branch' | 'full-tree' | 'from-node'; readonly fromNodeId?: string }
+  | { readonly type: 'showExportMenu' }
 
 export interface RagCitation {
   readonly source: string
