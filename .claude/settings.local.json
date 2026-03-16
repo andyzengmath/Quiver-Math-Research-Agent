@@ -5,7 +5,12 @@
       "Bash(gh repo:*)",
       "WebFetch(domain:github.com)",
       "Bash(node:*)",
-      "Bash(gh release:*)"
+      "Bash(gh release:*)",
+      "Bash(cd \"C:/Users/andyzeng/OneDrive - Microsoft/Documents/GitHub/Math-research-agent\" && mkdir -p media && curl -sL \"https://raw.githubusercontent.com/andyzengmath/Quiver/main/public/favicon.svg\" -o media/icon.svg && ls -la media/icon.svg)",
+      "Bash(cp \"C:/Users/andyzeng/OneDrive - Microsoft/Documents/GitHub/Math-research-agent/package.json\" /c/dev/math-agent/ && cp \"C:/Users/andyzeng/OneDrive - Microsoft/Documents/GitHub/Math-research-agent/media/icon.svg\" /c/dev/math-agent/media/ && cd /c/dev/math-agent && node esbuild.extension.js 2>&1 && node esbuild.webview.js 2>&1 && rm -f *.vsix && npx @vscode/vsce package --skip-license 2>&1 | tail -5)",
+      "Bash(mkdir -p /c/dev/math-agent/media && cp \"C:/Users/andyzeng/OneDrive - Microsoft/Documents/GitHub/Math-research-agent/media/icon.svg\" /c/dev/math-agent/media/ && cd /c/dev/math-agent && node esbuild.extension.js 2>&1 && node esbuild.webview.js 2>&1 && rm -f *.vsix && npx @vscode/vsce package --skip-license 2>&1 | tail -5)",
+      "Bash(cp \"C:/Users/andyzeng/OneDrive - Microsoft/Documents/GitHub/Math-research-agent/package.json\" /c/dev/math-agent/ && cp \"C:/Users/andyzeng/OneDrive - Microsoft/Documents/GitHub/Math-research-agent/media/icon.png\" /c/dev/math-agent/media/ && cd /c/dev/math-agent && node esbuild.extension.js 2>&1 && rm -f *.vsix && npx @vscode/vsce package --skip-license 2>&1 | tail -3)",
+      "Bash(cd:*)"
     ]
   }
 }

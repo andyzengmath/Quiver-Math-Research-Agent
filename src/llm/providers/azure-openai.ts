@@ -6,28 +6,46 @@ import { LlmService } from '../service'
 
 const SECRET_KEY = 'azure-openai-api-key'
 const DEFAULT_API_VERSION = '2024-12-01-preview'
+const TOKEN_SCOPE = 'https://cognitiveservices.azure.com/.default'
 
 interface AzureOpenAiClientOptions {
-  readonly apiKey: string
+  readonly apiKey?: string
   readonly endpoint: string
   readonly deployment: string
   readonly apiVersion: string
+  readonly azureADTokenProvider?: () => Promise<string>
 }
 
 type AzureOpenAiClientFactory = (opts: AzureOpenAiClientOptions) => AzureOpenAI
 
+export type AzureIdentityModule = {
+  readonly DefaultAzureCredential: new () => {
+    getToken(scope: string): Promise<{ token: string }>
+  }
+  readonly InteractiveBrowserCredential: new () => {
+    getToken(scope: string): Promise<{ token: string }>
+  }
+}
+
+export type AzureIdentityImporter = () => Promise<AzureIdentityModule>
+
 /**
  * Azure OpenAI LLM provider implementation.
  * Creates streaming chat completions using the Azure OpenAI SDK.
- * Supports API key authentication against an Azure OpenAI resource.
+ * Supports both API key and managed identity authentication.
  */
 export class AzureOpenAiProvider implements LlmProvider {
   readonly id = 'azure-openai'
 
   private readonly llmService: LlmService
   private readonly createClient: AzureOpenAiClientFactory
+  private readonly importIdentity: AzureIdentityImporter
 
-  constructor(llmService: LlmService, clientFactory?: AzureOpenAiClientFactory) {
+  constructor(
+    llmService: LlmService,
+    clientFactory?: AzureOpenAiClientFactory,
+    identityImporter?: AzureIdentityImporter
+  ) {
     this.llmService = llmService
     this.createClient = clientFactory ?? ((opts: AzureOpenAiClientOptions) =>
       new AzureOpenAI({
@@ -35,8 +53,14 @@ export class AzureOpenAiProvider implements LlmProvider {
         endpoint: opts.endpoint,
         deployment: opts.deployment,
         apiVersion: opts.apiVersion,
+        azureADTokenProvider: opts.azureADTokenProvider,
       })
     )
+    const azureIdentityModule = '@azure/identity'
+    this.importIdentity = identityImporter ?? (async () => {
+      const mod = await import(/* webpackIgnore: true */ azureIdentityModule)
+      return mod as unknown as AzureIdentityModule
+    })
   }
 
   async *sendMessage(
@@ -63,22 +87,12 @@ export class AzureOpenAiProvider implements LlmProvider {
       )
     }
 
-    const apiKey = await this.llmService.getApiKey(SECRET_KEY)
-    if (!apiKey) {
-      throw new LlmAuthError(
-        'azure-openai',
-        'Azure OpenAI API key not configured. Please set your API key.'
-      )
-    }
-
     const apiVersion = config.get<string>('azureApiVersion') ?? DEFAULT_API_VERSION
+    const authMethod = config.get<string>('azureAuthMethod') ?? 'api-key'
 
-    const client = this.createClient({
-      apiKey,
-      endpoint,
-      deployment,
-      apiVersion,
-    })
+    const client = authMethod === 'managed-identity'
+      ? await this.createManagedIdentityClient(endpoint, deployment, apiVersion)
+      : await this.createApiKeyClient(endpoint, deployment, apiVersion)
 
     const requestParams: OpenAI.Chat.ChatCompletionCreateParamsStreaming = {
       model: deployment,
@@ -113,6 +127,55 @@ export class AzureOpenAiProvider implements LlmProvider {
       if (content != null) {
         yield content
       }
+    }
+  }
+
+  private async createApiKeyClient(endpoint: string, deployment: string, apiVersion: string): Promise<AzureOpenAI> {
+    const apiKey = await this.llmService.getApiKey(SECRET_KEY)
+    if (!apiKey) {
+      throw new LlmAuthError(
+        'azure-openai',
+        'Azure OpenAI API key not configured. Please set your API key.'
+      )
+    }
+    return this.createClient({ apiKey, endpoint, deployment, apiVersion })
+  }
+
+  private async createManagedIdentityClient(endpoint: string, deployment: string, apiVersion: string): Promise<AzureOpenAI> {
+    const tokenProvider = await this.buildTokenProvider()
+    return this.createClient({ endpoint, deployment, apiVersion, azureADTokenProvider: tokenProvider })
+  }
+
+  private async buildTokenProvider(): Promise<() => Promise<string>> {
+    const identityModule = await this.importIdentity()
+    const defaultCredential = new identityModule.DefaultAzureCredential()
+
+    try {
+      await defaultCredential.getToken(TOKEN_SCOPE)
+      return async () => {
+        const result = await defaultCredential.getToken(TOKEN_SCOPE)
+        return result.token
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'CredentialUnavailableError') {
+        const browserCredential = new identityModule.InteractiveBrowserCredential()
+        try {
+          await browserCredential.getToken(TOKEN_SCOPE)
+          return async () => {
+            const result = await browserCredential.getToken(TOKEN_SCOPE)
+            return result.token
+          }
+        } catch {
+          throw new LlmAuthError(
+            'azure-openai',
+            "Azure authentication failed. Please run 'az login' or sign in via the browser prompt."
+          )
+        }
+      }
+      throw new LlmAuthError(
+        'azure-openai',
+        "Azure authentication failed. Please run 'az login' or sign in via the browser prompt."
+      )
     }
   }
 
