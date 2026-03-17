@@ -1,6 +1,5 @@
 import * as vscode from 'vscode'
 import { VscodeLmProvider } from './llm/providers/vscode-lm'
-import { AzureOpenAiProvider } from './llm/providers/azure-openai'
 import { createServices } from './services'
 import { MathResearchPanel } from './webview/panel'
 import { registerChatParticipant } from './chat/participant'
@@ -17,10 +16,6 @@ export function activate(context: vscode.ExtensionContext): void {
     // Register the VS Code Language Model API provider (Copilot)
     const vscodeLmProvider = new VscodeLmProvider()
     services.llm.registerProvider(vscodeLmProvider)
-
-    // Register Azure OpenAI provider (supports api-key and managed-identity auth)
-    const azureOpenAiProvider = new AzureOpenAiProvider(services.llm)
-    services.llm.registerProvider(azureOpenAiProvider)
 
     // Restore active provider from user settings for returning users
     const configuredProvider = vscode.workspace
