@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 import { LlmService } from './llm/service'
+import { listAzureDeployments, AzureAuth } from './llm/azure-deployments'
 
 interface ProviderOption extends vscode.QuickPickItem {
   readonly id: string
@@ -10,12 +11,210 @@ const PROVIDER_OPTIONS: readonly ProviderOption[] = [
   { label: 'OpenAI (GPT-5.4)', id: 'openai' },
   { label: 'Anthropic (Claude Opus 4.6)', id: 'anthropic' },
   { label: 'Google (Gemini 3.1 Pro)', id: 'google' },
+  { label: 'Azure OpenAI', id: 'azure-openai' },
 ]
 
 const SECRET_KEY_MAP: Readonly<Record<string, string>> = {
   openai: 'openai',
   anthropic: 'anthropic-api-key',
   google: 'google-api-key',
+  'azure-openai': 'azure-openai-api-key',
+}
+
+const DEFAULT_AZURE_API_VERSION = '2024-12-01-preview'
+
+interface AzureOnboardingResult {
+  readonly endpoint: string
+  readonly deployment: string
+  readonly authMethod: 'api-key' | 'managed-identity'
+}
+
+/**
+ * Runs the Azure OpenAI-specific onboarding sub-flow.
+ *
+ * Collects endpoint URL, auth method, credentials, and deployment name.
+ * Returns the gathered configuration or undefined if user cancelled at any step.
+ */
+async function runAzureOnboardingFlow(
+  llmService: LlmService
+): Promise<AzureOnboardingResult | undefined> {
+  // Step A1: Enter endpoint URL
+  const endpoint = await vscode.window.showInputBox({
+    prompt: 'Enter your Azure OpenAI endpoint URL',
+    ignoreFocusOut: true,
+    placeHolder: 'https://my-resource.openai.azure.com/',
+    validateInput: (value: string) => {
+      if (!value || value.trim().length === 0) {
+        return 'Endpoint URL cannot be empty'
+      }
+      if (!value.trim().startsWith('https://')) {
+        return 'Endpoint URL must start with https://'
+      }
+      return undefined
+    },
+  })
+
+  if (!endpoint) {
+    return undefined
+  }
+
+  const trimmedEndpoint = endpoint.trim()
+
+  // Step A2: Choose auth method
+  const authOptions: readonly vscode.QuickPickItem[] = [
+    { label: 'API Key' },
+    { label: 'Managed Identity (Microsoft Entra)' },
+  ]
+
+  const authChoice = await vscode.window.showQuickPick(
+    authOptions as vscode.QuickPickItem[],
+    {
+      placeHolder: 'Choose authentication method',
+      title: 'Azure OpenAI — Authentication',
+      ignoreFocusOut: true,
+    }
+  )
+
+  if (!authChoice) {
+    return undefined
+  }
+
+  const isApiKey = authChoice.label === 'API Key'
+  const authMethod: 'api-key' | 'managed-identity' = isApiKey
+    ? 'api-key'
+    : 'managed-identity'
+
+  // Step A3: Collect credentials based on auth method
+  let auth: AzureAuth
+
+  if (isApiKey) {
+    // Step A3a: Prompt for API key
+    const apiKey = await vscode.window.showInputBox({
+      prompt: 'Enter your Azure OpenAI API key',
+      password: true,
+      ignoreFocusOut: true,
+      placeHolder: 'Enter API key...',
+      validateInput: (value: string) => {
+        if (!value || value.trim().length === 0) {
+          return 'API key cannot be empty'
+        }
+        return undefined
+      },
+    })
+
+    if (!apiKey) {
+      return undefined
+    }
+
+    const secretKey = SECRET_KEY_MAP['azure-openai']
+    await llmService.setApiKey(secretKey, apiKey.trim())
+    auth = { type: 'api-key', apiKey: apiKey.trim() }
+  } else {
+    // Step A3b: Managed Identity info message
+    await vscode.window.showInformationMessage(
+      'Azure Managed Identity will use DefaultAzureCredential. ' +
+      'This chains through environment variables, managed identity (Azure VMs), ' +
+      'Azure CLI (az login), and falls back to browser-based OAuth login.'
+    )
+
+    // For deployment discovery with managed identity, we attempt to get a token.
+    // If this fails, deployment listing will fall back to manual input.
+    let token: string | undefined
+    try {
+      // Use indirect import to avoid TypeScript resolving the module at compile time.
+      // @azure/identity is lazy-loaded only when managed identity auth is selected.
+      const azureIdentityModule = '@azure/identity'
+      const identityModule = await import(/* webpackIgnore: true */ azureIdentityModule) as {
+        DefaultAzureCredential: new () => {
+          getToken(scope: string): Promise<{ token: string }>
+        }
+      }
+      const credential = new identityModule.DefaultAzureCredential()
+      const tokenResponse = await credential.getToken(
+        'https://cognitiveservices.azure.com/.default'
+      )
+      token = tokenResponse.token
+    } catch {
+      // Token acquisition failed; deployment listing will use manual fallback
+    }
+
+    auth = token
+      ? { type: 'bearer', token }
+      : { type: 'api-key', apiKey: '' } // Empty key will cause listing to fail gracefully
+  }
+
+  // Step A4: Auto-discover deployments
+  const deployment = await pickAzureDeployment(trimmedEndpoint, auth)
+
+  if (!deployment) {
+    return undefined
+  }
+
+  return {
+    endpoint: trimmedEndpoint,
+    deployment,
+    authMethod,
+  }
+}
+
+/**
+ * Fetches available Azure OpenAI deployments and presents a QuickPick.
+ * Falls back to manual text input if auto-discovery fails or returns empty.
+ *
+ * @returns The selected deployment name, or undefined if cancelled.
+ */
+async function pickAzureDeployment(
+  endpoint: string,
+  auth: AzureAuth
+): Promise<string | undefined> {
+  const deployments = await listAzureDeployments(
+    endpoint,
+    auth,
+    DEFAULT_AZURE_API_VERSION
+  )
+
+  if (deployments.length > 0) {
+    // Show QuickPick with deployment info
+    const items: readonly (vscode.QuickPickItem & { readonly deploymentName: string })[] =
+      deployments.map(d => ({
+        label: `${d.name} (${d.model}) -- ${d.status}`,
+        deploymentName: d.name,
+      }))
+
+    const picked = await vscode.window.showQuickPick(
+      items as (vscode.QuickPickItem & { readonly deploymentName: string })[],
+      {
+        placeHolder: 'Select a deployment',
+        title: 'Azure OpenAI — Deployment',
+        ignoreFocusOut: true,
+      }
+    )
+
+    if (!picked) {
+      return undefined
+    }
+
+    return picked.deploymentName
+  }
+
+  // Fallback: manual input when auto-discovery fails or returns empty
+  const manualDeployment = await vscode.window.showInputBox({
+    prompt: 'Could not list deployments. Enter the deployment name manually.',
+    ignoreFocusOut: true,
+    placeHolder: 'e.g. gpt-5-4-deployment',
+    validateInput: (value: string) => {
+      if (!value || value.trim().length === 0) {
+        return 'Deployment name cannot be empty'
+      }
+      return undefined
+    },
+  })
+
+  if (!manualDeployment) {
+    return undefined
+  }
+
+  return manualDeployment.trim()
 }
 
 /**
@@ -42,8 +241,25 @@ export async function runOnboardingWizard(
     return false
   }
 
-  // Step 2: Enter API key (if not vscode-lm)
-  if (chosen.id !== 'vscode-lm') {
+  // Step 2: Provider-specific setup
+  let azureResult: AzureOnboardingResult | undefined
+
+  if (chosen.id === 'azure-openai') {
+    // Azure OpenAI has its own multi-step flow
+    azureResult = await runAzureOnboardingFlow(llmService)
+
+    if (!azureResult) {
+      return false
+    }
+
+    // Save Azure-specific settings before testing connection
+    const config = vscode.workspace.getConfiguration('mathAgent.llm')
+    await config.update('azureEndpoint', azureResult.endpoint, vscode.ConfigurationTarget.Global)
+    await config.update('azureDeployment', azureResult.deployment, vscode.ConfigurationTarget.Global)
+    await config.update('azureAuthMethod', azureResult.authMethod, vscode.ConfigurationTarget.Global)
+    await config.update('azureApiVersion', DEFAULT_AZURE_API_VERSION, vscode.ConfigurationTarget.Global)
+  } else if (chosen.id !== 'vscode-lm') {
+    // Standard provider: enter API key
     const secretKey = SECRET_KEY_MAP[chosen.id]
     if (!secretKey) {
       await vscode.window.showErrorMessage(
