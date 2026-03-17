@@ -124,6 +124,22 @@ export class MathResearchPanel {
         }
       }
 
+      // Azure OpenAI: only include when both endpoint and deployment are configured
+      const azureEndpoint = llmConfig.get<string>('azureEndpoint', '')
+      const azureDeployment = llmConfig.get<string>('azureDeployment', '')
+      if (azureEndpoint && azureDeployment) {
+        try {
+          panel.services.llm.getProvider('azure-openai')
+          providerConfigs.push({
+            id: 'azure-openai',
+            model: azureDeployment,
+            label: 'Azure OpenAI',
+          })
+        } catch {
+          // Provider not registered, skip
+        }
+      }
+
       panel.postToWebview({ type: 'providers', providers: providerConfigs })
 
       // Post lean4 availability
