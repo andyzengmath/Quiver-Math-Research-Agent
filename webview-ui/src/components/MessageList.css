@@ -315,3 +315,27 @@
   padding: 0 12px;
   flex-shrink: 0;
 }
+
+/* Export Button */
+.export-button {
+  background: var(--vscode-button-secondaryBackground, #333);
+  color: var(--vscode-button-secondaryForeground, #ccc);
+  border: 1px solid var(--vscode-panel-border, #444);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-family: var(--vscode-font-family, sans-serif);
+  cursor: pointer;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.export-button:hover {
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+}
+
+.export-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

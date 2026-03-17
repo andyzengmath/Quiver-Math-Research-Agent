@@ -10,6 +10,9 @@ export interface MessageBubbleProps {
   readonly onDeleteBranch?: (nodeId: string) => void
   readonly onFork?: (nodeId: string) => void
   readonly isStreaming?: boolean
+  readonly isStreamingGlobal?: boolean
+  readonly onExportMarkdown?: (nodeId: string) => void
+  readonly onExportHtml?: (nodeId: string) => void
 }
 
 export function MessageBubble({
@@ -20,6 +23,9 @@ export function MessageBubble({
   onDeleteBranch,
   onFork,
   isStreaming,
+  isStreamingGlobal,
+  onExportMarkdown,
+  onExportHtml,
 }: MessageBubbleProps): React.ReactElement {
   // During streaming, use plain markdown to avoid KaTeX errors from incomplete LaTeX
   const rendered = isStreaming ? renderPlainMarkdown(content) : renderMathMarkdown(content)
@@ -64,6 +70,35 @@ export function MessageBubble({
     }
   }, [nodeId, onFork])
 
+  const handleExportMarkdown = useCallback(() => {
+    if (nodeId && onExportMarkdown) {
+      onExportMarkdown(nodeId)
+    }
+  }, [nodeId, onExportMarkdown])
+
+  const handleExportHtml = useCallback(() => {
+    if (nodeId && onExportHtml) {
+      onExportHtml(nodeId)
+    }
+  }, [nodeId, onExportHtml])
+
+  const contextMenuItems = React.useMemo(() => {
+    const items: Array<{ readonly label: string; readonly onClick: () => void }> = [
+      { label: 'Delete branch', onClick: handleDelete },
+    ]
+
+    if (!isStreamingGlobal && nodeId) {
+      if (onExportMarkdown) {
+        items.push({ label: 'Export from here (Markdown)', onClick: handleExportMarkdown })
+      }
+      if (onExportHtml) {
+        items.push({ label: 'Export from here (HTML)', onClick: handleExportHtml })
+      }
+    }
+
+    return items
+  }, [handleDelete, isStreamingGlobal, nodeId, onExportMarkdown, onExportHtml, handleExportMarkdown, handleExportHtml])
+
   return (
     <div
       className={`message-bubble ${role === 'user' ? 'user-message' : 'assistant-message'}`}
@@ -87,7 +122,7 @@ export function MessageBubble({
         <ContextMenu
           x={contextMenu.x}
           y={contextMenu.y}
-          items={[{ label: 'Delete branch', onClick: handleDelete }]}
+          items={contextMenuItems}
           onClose={handleCloseMenu}
         />
       )}

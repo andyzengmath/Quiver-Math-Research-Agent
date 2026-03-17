@@ -306,6 +306,24 @@ export function ResearchTab(): React.ReactElement {
     [postMessage]
   )
 
+  const handleExport = useCallback(() => {
+    postMessage({ type: 'showExportMenu' })
+  }, [postMessage])
+
+  const handleExportMarkdownFromNode = useCallback(
+    (fromNodeId: string) => {
+      postMessage({ type: 'exportMarkdown', mode: 'from-node', fromNodeId })
+    },
+    [postMessage]
+  )
+
+  const handleExportHtmlFromNode = useCallback(
+    (fromNodeId: string) => {
+      postMessage({ type: 'exportHtml', mode: 'from-node', fromNodeId })
+    },
+    [postMessage]
+  )
+
   const handlePromoteToBranch = useCallback(
     (_personaId: string, content: string) => {
       // Fork from the last node on the active path, then send the promoted content
@@ -408,6 +426,15 @@ export function ResearchTab(): React.ReactElement {
             />
           )}
           <RagToggle enabled={ragEnabled} onToggle={handleRagToggle} />
+          <button
+            type="button"
+            className="export-button"
+            onClick={handleExport}
+            disabled={isStreaming}
+            title="Export conversation"
+          >
+            Export
+          </button>
         </div>
       </div>
       {hasSiblings && (
@@ -456,6 +483,9 @@ export function ResearchTab(): React.ReactElement {
         lean4ResultsByNode={lean4Results}
         onVerifyLean4={handleVerifyLean4}
         onRetryLean4={handleRetryLean4}
+        isStreaming={isStreaming}
+        onExportMarkdown={handleExportMarkdownFromNode}
+        onExportHtml={handleExportHtmlFromNode}
       />
       {isMultiAgentActive && (
         <MultiAgentCards
