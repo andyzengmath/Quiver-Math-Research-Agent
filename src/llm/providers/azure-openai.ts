@@ -150,20 +150,35 @@ export class AzureOpenAiProvider implements LlmProvider {
     const identityModule = await this.importIdentity()
     const defaultCredential = new identityModule.DefaultAzureCredential()
 
+    // Discover which credential works and cache the first token
     try {
-      await defaultCredential.getToken(TOKEN_SCOPE)
+      const initial = await defaultCredential.getToken(TOKEN_SCOPE)
+      let cachedToken = initial.token
+      let used = false
       return async () => {
+        if (!used) {
+          used = true
+          return cachedToken
+        }
         const result = await defaultCredential.getToken(TOKEN_SCOPE)
-        return result.token
+        cachedToken = result.token
+        return cachedToken
       }
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'CredentialUnavailableError') {
         const browserCredential = new identityModule.InteractiveBrowserCredential()
         try {
-          await browserCredential.getToken(TOKEN_SCOPE)
+          const initial = await browserCredential.getToken(TOKEN_SCOPE)
+          let cachedToken = initial.token
+          let used = false
           return async () => {
+            if (!used) {
+              used = true
+              return cachedToken
+            }
             const result = await browserCredential.getToken(TOKEN_SCOPE)
-            return result.token
+            cachedToken = result.token
+            return cachedToken
           }
         } catch {
           throw new LlmAuthError(

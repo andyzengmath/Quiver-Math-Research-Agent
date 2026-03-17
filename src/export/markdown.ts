@@ -186,6 +186,7 @@ function exportFromNode(tree: DialogueTree, fromNodeId: string): string {
     return parts.join('')
   }
 
+  const activeSet = new Set(tree.activePath)
   const messageParts: string[] = []
   let currentId: string | undefined = fromNodeId
 
@@ -202,8 +203,10 @@ function exportFromNode(tree: DialogueTree, fromNodeId: string): string {
       }
     }
 
-    // Follow first child to leaf
-    currentId = node.children.length > 0 ? node.children[0] : undefined
+    // Follow active branch path if possible, otherwise first child
+    currentId = node.children.length > 0
+      ? (node.children.find(c => activeSet.has(c)) ?? node.children[0])
+      : undefined
   }
 
   parts.push(messageParts.join('\n\n---\n\n'))

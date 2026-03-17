@@ -85,7 +85,7 @@ async function runAzureOnboardingFlow(
     : 'managed-identity'
 
   // Step A3: Collect credentials based on auth method
-  let auth: AzureAuth
+  let auth: AzureAuth | undefined
 
   if (isApiKey) {
     // Step A3a: Prompt for API key
@@ -138,13 +138,16 @@ async function runAzureOnboardingFlow(
       // Token acquisition failed; deployment listing will use manual fallback
     }
 
-    auth = token
-      ? { type: 'bearer', token }
-      : { type: 'api-key', apiKey: '' } // Empty key will cause listing to fail gracefully
+    if (token) {
+      auth = { type: 'bearer', token }
+    }
   }
 
   // Step A4: Auto-discover deployments
-  const deployment = await pickAzureDeployment(trimmedEndpoint, auth)
+  // Skip discovery if no auth is available (managed identity token acquisition failed)
+  const deployment = auth
+    ? await pickAzureDeployment(trimmedEndpoint, auth)
+    : await promptManualDeployment()
 
   if (!deployment) {
     return undefined
@@ -215,6 +218,24 @@ async function pickAzureDeployment(
   }
 
   return manualDeployment.trim()
+}
+
+/**
+ * Prompts for manual deployment name input when auto-discovery is unavailable.
+ */
+async function promptManualDeployment(): Promise<string | undefined> {
+  const deployment = await vscode.window.showInputBox({
+    prompt: 'Enter the Azure OpenAI deployment name.',
+    ignoreFocusOut: true,
+    placeHolder: 'e.g. gpt-5-4-deployment',
+    validateInput: (value: string) => {
+      if (!value || value.trim().length === 0) {
+        return 'Deployment name cannot be empty'
+      }
+      return undefined
+    },
+  })
+  return deployment?.trim()
 }
 
 /**
