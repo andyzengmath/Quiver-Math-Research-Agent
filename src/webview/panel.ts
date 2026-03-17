@@ -11,6 +11,7 @@ import { registerModelHandler } from './handlers/model-handler'
 import { registerTreeHandler } from './handlers/tree-handler'
 import { registerPersonaHandlers } from './handlers/persona-handler'
 import { registerWriteHandlers } from './handlers/write-handler'
+import { registerExportHandlers } from './handlers/export-handler'
 
 export class MathResearchPanel {
   public static readonly viewType = 'mathAgent.researchPanel'
@@ -88,6 +89,7 @@ export class MathResearchPanel {
     registerTreeHandler(this.registry)
     registerPersonaHandlers(this.registry)
     registerWriteHandlers(this.registry)
+    registerExportHandlers(this.registry)
   }
 
   private registerBuiltInHandlers(): void {
@@ -117,6 +119,22 @@ export class MathResearchPanel {
           panel.services.llm.getProvider(def.id)
           const model = llmConfig.get<string>(def.modelKey, '')
           providerConfigs.push({ id: def.id, model, label: def.label })
+        } catch {
+          // Provider not registered, skip
+        }
+      }
+
+      // Azure OpenAI: only include when both endpoint and deployment are configured
+      const azureEndpoint = llmConfig.get<string>('azureEndpoint', '')
+      const azureDeployment = llmConfig.get<string>('azureDeployment', '')
+      if (azureEndpoint && azureDeployment) {
+        try {
+          panel.services.llm.getProvider('azure-openai')
+          providerConfigs.push({
+            id: 'azure-openai',
+            model: azureDeployment,
+            label: 'Azure OpenAI',
+          })
         } catch {
           // Provider not registered, skip
         }

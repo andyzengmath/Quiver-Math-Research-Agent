@@ -24,6 +24,9 @@ export interface MessageListProps {
   readonly lean4ResultsByNode?: ReadonlyMap<string, Lean4Result>
   readonly onVerifyLean4?: (nodeId: string) => void
   readonly onRetryLean4?: (nodeId: string) => void
+  readonly isStreaming?: boolean
+  readonly onExportMarkdown?: (nodeId: string) => void
+  readonly onExportHtml?: (nodeId: string) => void
 }
 
 export function MessageList({
@@ -38,6 +41,9 @@ export function MessageList({
   lean4ResultsByNode,
   onVerifyLean4,
   onRetryLean4,
+  isStreaming,
+  onExportMarkdown,
+  onExportHtml,
 }: MessageListProps): React.ReactElement {
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -77,6 +83,9 @@ export function MessageList({
               onDeleteBranch={onDeleteBranch}
               onFork={onFork}
               isStreaming={msg.id === streamingNodeId}
+              isStreamingGlobal={isStreaming}
+              onExportMarkdown={onExportMarkdown}
+              onExportHtml={onExportHtml}
             />
             {msg.role === 'assistant' && ragStatus && (
               <RagIndicator

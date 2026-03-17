@@ -2,7 +2,7 @@
   "name": "quiver-math-research-agent",
   "displayName": "Quiver: Math Research Agent",
   "description": "AI-powered math research assistant with branching dialogue, RAG knowledge retrieval, and paper writing",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "Quiver-Math",
   "icon": "media/icon.png",
   "license": "MIT",
@@ -67,7 +67,8 @@
             "vscode-lm",
             "openai",
             "anthropic",
-            "google"
+            "google",
+            "azure-openai"
           ],
           "default": "openai",
           "description": "LLM provider to use for AI interactions"
@@ -86,6 +87,30 @@
           "type": "string",
           "default": "gemini-3.1-pro",
           "description": "Google model name"
+        },
+        "mathAgent.llm.azureEndpoint": {
+          "type": "string",
+          "default": "",
+          "description": "Azure OpenAI resource URL (e.g., https://my-resource.openai.azure.com/)"
+        },
+        "mathAgent.llm.azureDeployment": {
+          "type": "string",
+          "default": "",
+          "description": "Azure OpenAI deployment name"
+        },
+        "mathAgent.llm.azureAuthMethod": {
+          "type": "string",
+          "enum": [
+            "api-key",
+            "managed-identity"
+          ],
+          "default": "api-key",
+          "description": "Azure OpenAI authentication method"
+        },
+        "mathAgent.llm.azureApiVersion": {
+          "type": "string",
+          "default": "2024-12-01-preview",
+          "description": "Azure OpenAI API version"
         },
         "mathAgent.llm.entityDetectionModel": {
           "type": "string",
