@@ -34,6 +34,7 @@ export type WebviewToHost =
   | { readonly type: 'exportMarkdown'; readonly mode: 'active-branch' | 'full-tree' | 'from-node'; readonly fromNodeId?: string }
   | { readonly type: 'exportHtml'; readonly mode: 'active-branch' | 'full-tree' | 'from-node'; readonly fromNodeId?: string }
   | { readonly type: 'showExportMenu' }
+  | { readonly type: 'setReasoningEffort'; readonly effort: string }
 
 export interface RagCitation {
   readonly source: string
@@ -75,6 +76,7 @@ export interface TexStructureItem {
  */
 export type HostToWebview =
   | { readonly type: 'treeState'; readonly tree: DialogueTree }
+  | { readonly type: 'streamStart'; readonly nodeId: string; readonly thinkingMessage: string }
   | { readonly type: 'streamChunk'; readonly nodeId: string; readonly text: string }
   | { readonly type: 'streamEnd'; readonly nodeId: string }
   | { readonly type: 'ragStatus'; readonly nodeId: string; readonly status: RagStatus }

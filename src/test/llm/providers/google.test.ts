@@ -5,11 +5,6 @@ import { LlmService } from '../../../llm/service'
 import { LlmAuthError, LlmMessage, LlmOptions, LlmRateLimitError } from '../../../llm/types'
 import { GoogleProvider } from '../../../llm/providers/google'
 import { createMockExtensionContext } from '../../mock-vscode'
-import {
-  GoogleGenerativeAI,
-  GenerativeModel,
-  GoogleGenerativeAIFetchError,
-} from '@google/generative-ai'
 
 /**
  * Helper: collect all chunks from an AsyncIterable into a string array.
@@ -23,47 +18,28 @@ async function collectChunks(iterable: AsyncIterable<string>): Promise<string[]>
 }
 
 /**
- * Creates a mock stream result that yields EnhancedGenerateContentResponse chunks.
+ * Creates a mock async iterable stream that yields chunks with a `.text` property.
+ * This matches the @google/genai SDK response shape.
  */
-function createMockStreamResult(textChunks: string[]) {
+function createMockStream(textChunks: string[]) {
   async function* streamGenerator() {
     for (const text of textChunks) {
-      yield {
-        text: () => text,
-        candidates: [{ content: { parts: [{ text }], role: 'model' } }],
-        functionCalls: () => [],
-        functionCall: () => undefined,
-      }
+      yield { text }
     }
   }
-
-  return {
-    stream: streamGenerator(),
-    response: Promise.resolve({
-      text: () => textChunks.join(''),
-      candidates: [],
-      functionCalls: () => [],
-      functionCall: () => undefined,
-    }),
-  }
+  return streamGenerator()
 }
 
 /**
- * Creates a mock GoogleGenerativeAI instance with a stubbed getGenerativeModel method.
+ * Creates a mock GoogleGenAI client with a stubbed models.generateContentStream method.
+ * The new SDK uses client.models.generateContentStream({ model, contents, config }).
  */
-function createMockGoogleAI(generateContentStreamStub: sinon.SinonStub, capturedParams?: { modelParams?: unknown }) {
-  const mockModel = {
-    generateContentStream: generateContentStreamStub,
-  }
-
+function createMockGoogleAI(generateContentStreamStub: sinon.SinonStub) {
   return {
-    getGenerativeModel: (params: unknown) => {
-      if (capturedParams) {
-        capturedParams.modelParams = params
-      }
-      return mockModel as unknown as GenerativeModel
+    models: {
+      generateContentStream: generateContentStreamStub,
     },
-  } as unknown as GoogleGenerativeAI
+  }
 }
 
 describe('GoogleProvider', () => {
@@ -98,11 +74,11 @@ describe('GoogleProvider', () => {
     it('calls generateContentStream and yields text chunks', async () => {
       await llmService.setApiKey('google-api-key', 'test-google-key')
 
-      const streamResult = createMockStreamResult(['Hello', ' World', '!'])
-      const generateStub = sandbox.stub().resolves(streamResult)
+      const mockStream = createMockStream(['Hello', ' World', '!'])
+      const generateStub = sandbox.stub().resolves(mockStream)
       const mockAI = createMockGoogleAI(generateStub)
 
-      const provider = new GoogleProvider(llmService, () => mockAI)
+      const provider = new GoogleProvider(llmService, () => mockAI as never)
 
       const chunks = await collectChunks(
         provider.sendMessage(defaultMessages, defaultOptions, cancellationTokenSource.token)
@@ -140,15 +116,14 @@ describe('GoogleProvider', () => {
     it('throws LlmAuthError when Google returns auth error (403)', async () => {
       await llmService.setApiKey('google-api-key', 'invalid-key')
 
-      const authError = new GoogleGenerativeAIFetchError(
-        'API key not valid. Please pass a valid API key.',
-        403,
-        'Forbidden',
+      const authError = Object.assign(
+        new Error('API key not valid. Please pass a valid API key.'),
+        { status: 403 }
       )
 
       const generateStub = sandbox.stub().rejects(authError)
       const mockAI = createMockGoogleAI(generateStub)
-      const provider = new GoogleProvider(llmService, () => mockAI)
+      const provider = new GoogleProvider(llmService, () => mockAI as never)
 
       await assert.rejects(
         async () => {
@@ -172,15 +147,14 @@ describe('GoogleProvider', () => {
     it('throws LlmAuthError when Google returns 401', async () => {
       await llmService.setApiKey('google-api-key', 'expired-key')
 
-      const authError = new GoogleGenerativeAIFetchError(
-        'Unauthorized',
-        401,
-        'Unauthorized',
+      const authError = Object.assign(
+        new Error('Unauthorized'),
+        { status: 401 }
       )
 
       const generateStub = sandbox.stub().rejects(authError)
       const mockAI = createMockGoogleAI(generateStub)
-      const provider = new GoogleProvider(llmService, () => mockAI)
+      const provider = new GoogleProvider(llmService, () => mockAI as never)
 
       await assert.rejects(
         async () => {
@@ -206,15 +180,14 @@ describe('GoogleProvider', () => {
     it('throws LlmRateLimitError when Google returns 429', async () => {
       await llmService.setApiKey('google-api-key', 'test-key')
 
-      const rateLimitError = new GoogleGenerativeAIFetchError(
-        'Resource has been exhausted',
-        429,
-        'Too Many Requests',
+      const rateLimitError = Object.assign(
+        new Error('Resource has been exhausted'),
+        { status: 429 }
       )
 
       const generateStub = sandbox.stub().rejects(rateLimitError)
       const mockAI = createMockGoogleAI(generateStub)
-      const provider = new GoogleProvider(llmService, () => mockAI)
+      const provider = new GoogleProvider(llmService, () => mockAI as never)
 
       await assert.rejects(
         async () => {
@@ -236,15 +209,14 @@ describe('GoogleProvider', () => {
   })
 
   describe('system instruction', () => {
-    it('sets system instruction from system messages', async () => {
+    it('sets system instruction in config from system messages', async () => {
       await llmService.setApiKey('google-api-key', 'test-key')
 
-      const streamResult = createMockStreamResult(['response'])
-      const generateStub = sandbox.stub().resolves(streamResult)
-      const capturedParams: { modelParams?: unknown } = {}
-      const mockAI = createMockGoogleAI(generateStub, capturedParams)
+      const mockStream = createMockStream(['response'])
+      const generateStub = sandbox.stub().resolves(mockStream)
+      const mockAI = createMockGoogleAI(generateStub)
 
-      const provider = new GoogleProvider(llmService, () => mockAI)
+      const provider = new GoogleProvider(llmService, () => mockAI as never)
 
       const messages: LlmMessage[] = [
         { role: 'system', content: 'You are a math assistant' },
@@ -257,32 +229,26 @@ describe('GoogleProvider', () => {
 
       assert.deepEqual(chunks, ['response'])
 
-      // Verify system instruction was set on the model
-      const params = capturedParams.modelParams as { systemInstruction?: string }
-      assert.equal(params.systemInstruction, 'You are a math assistant')
-
-      // Verify the generateContentStream was called without system messages
+      // Verify the generateContentStream call args
       const callArgs = generateStub.firstCall.args[0]
-      const contents = Array.isArray(callArgs) ? callArgs : callArgs.contents ?? callArgs
-      // Ensure no system role in the content passed to generateContentStream
-      if (Array.isArray(contents)) {
-        for (const content of contents) {
-          if (typeof content === 'object' && 'role' in content) {
-            assert.notEqual(content.role, 'system', 'System messages should not be in contents')
-          }
-        }
+      // System instruction should be in config
+      assert.equal(callArgs.config.systemInstruction, 'You are a math assistant')
+
+      // Verify system messages are not in contents
+      const contents = callArgs.contents as Array<{ role: string }>
+      for (const content of contents) {
+        assert.notEqual(content.role, 'system', 'System messages should not be in contents')
       }
     })
 
     it('concatenates multiple system messages into one instruction', async () => {
       await llmService.setApiKey('google-api-key', 'test-key')
 
-      const streamResult = createMockStreamResult(['ok'])
-      const generateStub = sandbox.stub().resolves(streamResult)
-      const capturedParams: { modelParams?: unknown } = {}
-      const mockAI = createMockGoogleAI(generateStub, capturedParams)
+      const mockStream = createMockStream(['ok'])
+      const generateStub = sandbox.stub().resolves(mockStream)
+      const mockAI = createMockGoogleAI(generateStub)
 
-      const provider = new GoogleProvider(llmService, () => mockAI)
+      const provider = new GoogleProvider(llmService, () => mockAI as never)
 
       const messages: LlmMessage[] = [
         { role: 'system', content: 'You are a math assistant.' },
@@ -294,8 +260,8 @@ describe('GoogleProvider', () => {
         provider.sendMessage(messages, {}, cancellationTokenSource.token)
       )
 
-      const params = capturedParams.modelParams as { systemInstruction?: string }
-      assert.equal(params.systemInstruction, 'You are a math assistant.\nBe precise.')
+      const callArgs = generateStub.firstCall.args[0]
+      assert.equal(callArgs.config.systemInstruction, 'You are a math assistant.\nBe precise.')
     })
   })
 
@@ -303,41 +269,36 @@ describe('GoogleProvider', () => {
     it('uses model from options when provided', async () => {
       await llmService.setApiKey('google-api-key', 'test-key')
 
-      const streamResult = createMockStreamResult(['ok'])
-      const generateStub = sandbox.stub().resolves(streamResult)
-      const capturedParams: { modelParams?: unknown } = {}
-      const mockAI = createMockGoogleAI(generateStub, capturedParams)
+      const mockStream = createMockStream(['ok'])
+      const generateStub = sandbox.stub().resolves(mockStream)
+      const mockAI = createMockGoogleAI(generateStub)
 
-      const provider = new GoogleProvider(llmService, () => mockAI)
+      const provider = new GoogleProvider(llmService, () => mockAI as never)
 
       const options: LlmOptions = { model: 'gemini-2.0-flash' }
       await collectChunks(
         provider.sendMessage(defaultMessages, options, cancellationTokenSource.token)
       )
 
-      const params = capturedParams.modelParams as { model?: string }
-      assert.equal(params.model, 'gemini-2.0-flash')
+      const callArgs = generateStub.firstCall.args[0]
+      assert.equal(callArgs.model, 'gemini-2.0-flash')
     })
 
     it('uses default model when none specified in options', async () => {
       await llmService.setApiKey('google-api-key', 'test-key')
 
-      const streamResult = createMockStreamResult(['ok'])
-      const generateStub = sandbox.stub().resolves(streamResult)
-      const capturedParams: { modelParams?: unknown } = {}
-      const mockAI = createMockGoogleAI(generateStub, capturedParams)
+      const mockStream = createMockStream(['ok'])
+      const generateStub = sandbox.stub().resolves(mockStream)
+      const mockAI = createMockGoogleAI(generateStub)
 
-      const provider = new GoogleProvider(llmService, () => mockAI)
+      const provider = new GoogleProvider(llmService, () => mockAI as never)
 
       await collectChunks(
         provider.sendMessage(defaultMessages, defaultOptions, cancellationTokenSource.token)
       )
 
-      const params = capturedParams.modelParams as { model?: string }
-      assert.ok(
-        typeof params.model === 'string' && params.model.length > 0,
-        `Expected a non-empty model string, got "${params.model}"`
-      )
+      const callArgs = generateStub.firstCall.args[0]
+      assert.equal(callArgs.model, 'gemini-3.1-pro-preview')
     })
   })
 
@@ -345,11 +306,11 @@ describe('GoogleProvider', () => {
     it('handles empty messages array', async () => {
       await llmService.setApiKey('google-api-key', 'test-key')
 
-      const streamResult = createMockStreamResult(['ok'])
-      const generateStub = sandbox.stub().resolves(streamResult)
+      const mockStream = createMockStream(['ok'])
+      const generateStub = sandbox.stub().resolves(mockStream)
       const mockAI = createMockGoogleAI(generateStub)
 
-      const provider = new GoogleProvider(llmService, () => mockAI)
+      const provider = new GoogleProvider(llmService, () => mockAI as never)
 
       const chunks = await collectChunks(
         provider.sendMessage([], {}, cancellationTokenSource.token)
@@ -361,11 +322,11 @@ describe('GoogleProvider', () => {
     it('handles empty stream with no chunks', async () => {
       await llmService.setApiKey('google-api-key', 'test-key')
 
-      const streamResult = createMockStreamResult([])
-      const generateStub = sandbox.stub().resolves(streamResult)
+      const mockStream = createMockStream([])
+      const generateStub = sandbox.stub().resolves(mockStream)
       const mockAI = createMockGoogleAI(generateStub)
 
-      const provider = new GoogleProvider(llmService, () => mockAI)
+      const provider = new GoogleProvider(llmService, () => mockAI as never)
 
       const chunks = await collectChunks(
         provider.sendMessage(defaultMessages, defaultOptions, cancellationTokenSource.token)
@@ -381,7 +342,7 @@ describe('GoogleProvider', () => {
       const generateStub = sandbox.stub().rejects(unknownError)
       const mockAI = createMockGoogleAI(generateStub)
 
-      const provider = new GoogleProvider(llmService, () => mockAI)
+      const provider = new GoogleProvider(llmService, () => mockAI as never)
 
       await assert.rejects(
         async () => {
@@ -403,36 +364,35 @@ describe('GoogleProvider', () => {
       )
     })
 
-    it('handles chunks where text() returns empty string', async () => {
+    it('skips chunks where text is empty string', async () => {
       await llmService.setApiKey('google-api-key', 'test-key')
 
-      const streamResult = createMockStreamResult(['', 'data', ''])
-      const generateStub = sandbox.stub().resolves(streamResult)
+      const mockStream = createMockStream(['', 'data', ''])
+      const generateStub = sandbox.stub().resolves(mockStream)
       const mockAI = createMockGoogleAI(generateStub)
 
-      const provider = new GoogleProvider(llmService, () => mockAI)
+      const provider = new GoogleProvider(llmService, () => mockAI as never)
 
       const chunks = await collectChunks(
         provider.sendMessage(defaultMessages, defaultOptions, cancellationTokenSource.token)
       )
 
-      // Empty strings are valid, they should be yielded
-      assert.deepEqual(chunks, ['', 'data', ''])
+      // The provider checks `if (text)` which is falsy for empty strings, so they are skipped
+      assert.deepEqual(chunks, ['data'])
     })
 
-    it('maps GoogleGenerativeAIFetchError with 500 as unknown error (rethrows)', async () => {
+    it('rethrows error with status 500 unchanged', async () => {
       await llmService.setApiKey('google-api-key', 'test-key')
 
-      const serverError = new GoogleGenerativeAIFetchError(
-        'Internal server error',
-        500,
-        'Internal Server Error',
+      const serverError = Object.assign(
+        new Error('Internal server error'),
+        { status: 500 }
       )
 
       const generateStub = sandbox.stub().rejects(serverError)
       const mockAI = createMockGoogleAI(generateStub)
 
-      const provider = new GoogleProvider(llmService, () => mockAI)
+      const provider = new GoogleProvider(llmService, () => mockAI as never)
 
       await assert.rejects(
         async () => {

@@ -7,6 +7,8 @@ import { RagToggle } from './RagToggle'
 import { AttachedPapers } from './AttachedPapers'
 import { Lean4Badge } from './Lean4Badge'
 import { ModelSelector, type ProviderOption } from './ModelSelector'
+import { PersonaSelector, type PersonaOption } from './PersonaSelector'
+import { ReasoningEffortSelector } from './ReasoningEffortSelector'
 import { TreeSelector } from './TreeSelector'
 import { useWebviewMessage } from '../hooks/useWebviewMessage'
 import { useTreeState } from '../hooks/useTreeState'
@@ -77,7 +79,7 @@ function findBranchPointSiblings(tree: DialogueTree): ReadonlyArray<SiblingInfo>
 export function ResearchTab(): React.ReactElement {
   const { lastMessage, postMessage } = useWebviewMessage()
   const { tree, messages: treeMessages } = useTreeState(lastMessage)
-  const { streamingNodeId, streamingText, isStreaming } = useStreaming(lastMessage)
+  const { streamingNodeId, streamingText, isStreaming, thinkingMessage, thinkingSeconds } = useStreaming(lastMessage)
   const { responses: multiAgentResponses, synthesis: multiAgentSynthesis, isActive: isMultiAgentActive } = useMultiAgent(lastMessage)
   const { ragStatusByNode, dismissCitation } = useRagStatus(lastMessage)
 
@@ -87,6 +89,9 @@ export function ResearchTab(): React.ReactElement {
   const [lean4Results, setLean4Results] = useState<ReadonlyMap<string, Lean4Result>>(new Map())
   const [providers, setProviders] = useState<ReadonlyArray<ProviderOption>>([])
   const [selectedProviderId, setSelectedProviderId] = useState('')
+  const [personas, setPersonas] = useState<ReadonlyArray<PersonaOption>>([])
+  const [selectedPersonaId, setSelectedPersonaId] = useState('algebraist')
+  const [reasoningEffort, setReasoningEffort] = useState('xhigh')
   const [treeList, setTreeList] = useState<ReadonlyArray<TreeListItem>>([])
   const [activeTreeId, setActiveTreeId] = useState<string | null>(null)
 
@@ -127,6 +132,13 @@ export function ResearchTab(): React.ReactElement {
       if (providerOptions.length > 0 && selectedProviderId === '') {
         setSelectedProviderId(providerOptions[0].id)
       }
+    }
+    if (lastMessage.type === 'personas') {
+      const personaOptions: PersonaOption[] = lastMessage.personas.map((p) => ({
+        id: p.id,
+        label: p.label,
+      }))
+      setPersonas(personaOptions)
     }
     if (lastMessage.type === 'treeList') {
       setTreeList(lastMessage.trees)
@@ -240,6 +252,22 @@ export function ResearchTab(): React.ReactElement {
       postMessage({ type: 'setModel', provider: providerId, model })
     },
     [postMessage, providers]
+  )
+
+  const handlePersonaSelect = useCallback(
+    (personaId: string) => {
+      setSelectedPersonaId(personaId)
+      postMessage({ type: 'setPersona', personaId })
+    },
+    [postMessage]
+  )
+
+  const handleReasoningEffort = useCallback(
+    (effort: string) => {
+      setReasoningEffort(effort)
+      postMessage({ type: 'setReasoningEffort', effort })
+    },
+    [postMessage]
   )
 
   const handleRagToggle = useCallback(
@@ -358,6 +386,7 @@ export function ResearchTab(): React.ReactElement {
       role: m.role,
       content: m.content,
       childCount: tree ? (tree.nodes[m.id]?.children?.length ?? 0) : 0,
+      model: tree ? (tree.nodes[m.id]?.metadata?.model) : undefined,
     }))
 
     // If currently streaming, add/replace the streaming assistant message
@@ -418,6 +447,14 @@ export function ResearchTab(): React.ReactElement {
           )}
         </div>
         <div className="research-tab__header-actions">
+          {personas.length > 0 && (
+            <PersonaSelector
+              personas={personas}
+              selectedId={selectedPersonaId}
+              onSelect={handlePersonaSelect}
+              disabled={isStreaming}
+            />
+          )}
           {providers.length > 0 && (
             <ModelSelector
               providers={providers}
@@ -425,6 +462,11 @@ export function ResearchTab(): React.ReactElement {
               onSelect={handleModelSelect}
             />
           )}
+          <ReasoningEffortSelector
+              selectedEffort={reasoningEffort}
+              onSelect={handleReasoningEffort}
+              disabled={isStreaming}
+            />
           <RagToggle enabled={ragEnabled} onToggle={handleRagToggle} />
           <button
             type="button"
@@ -493,6 +535,16 @@ export function ResearchTab(): React.ReactElement {
           synthesis={multiAgentSynthesis}
           onPromoteToBranch={handlePromoteToBranch}
         />
+      )}
+      {thinkingMessage && (
+        <div className="thinking-indicator">
+          <span className="thinking-message">{thinkingMessage}</span>
+          <span className="thinking-timer">
+            {thinkingSeconds < 60
+              ? `${thinkingSeconds}s`
+              : `${Math.floor(thinkingSeconds / 60)}m${(thinkingSeconds % 60).toString().padStart(2, '0')}s`}
+          </span>
+        </div>
       )}
       <div className="input-area">
         {isStreaming && (

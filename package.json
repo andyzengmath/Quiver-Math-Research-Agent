@@ -85,8 +85,8 @@
         },
         "mathAgent.llm.googleModel": {
           "type": "string",
-          "default": "gemini-3.1-pro",
-          "description": "Google model name"
+          "default": "gemini-3.1-pro-preview",
+          "description": "Google model name (e.g., gemini-3.1-pro-preview)"
         },
         "mathAgent.llm.azureEndpoint": {
           "type": "string",
@@ -109,7 +109,7 @@
         },
         "mathAgent.llm.azureApiVersion": {
           "type": "string",
-          "default": "2024-12-01-preview",
+          "default": "2025-01-01-preview",
           "description": "Azure OpenAI API version"
         },
         "mathAgent.llm.entityDetectionModel": {
@@ -119,9 +119,16 @@
         },
         "mathAgent.llm.reasoningEffort": {
           "type": "string",
-          "enum": ["low", "medium", "high"],
-          "default": "high",
-          "description": "Reasoning/thinking effort level for LLM responses (supported by GPT-5.4, Claude with extended thinking)"
+          "enum": [
+            "none",
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh"
+          ],
+          "default": "xhigh",
+          "description": "Reasoning/thinking effort level for LLM responses. GPT-5.4 supports: none, low, medium, high, xhigh. GPT-5.4 Pro supports: medium, high, xhigh."
         },
         "mathAgent.defaultPersona": {
           "type": "string",
@@ -241,7 +248,9 @@
     "vitest": "^4.0.18"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.78.0",
+    "@anthropic-ai/sdk": "^0.79.0",
+    "@azure/identity": "^4.13.0",
+    "@google/genai": "^1.45.0",
     "@google/generative-ai": "^0.24.0",
     "cheerio": "^1.2.0",
     "fast-xml-parser": "^5.4.2",

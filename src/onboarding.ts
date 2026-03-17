@@ -121,10 +121,9 @@ async function runAzureOnboardingFlow(
     // If this fails, deployment listing will fall back to manual input.
     let token: string | undefined
     try {
-      // Use indirect import to avoid TypeScript resolving the module at compile time.
-      // @azure/identity is lazy-loaded only when managed identity auth is selected.
-      const azureIdentityModule = '@azure/identity'
-      const identityModule = await import(/* webpackIgnore: true */ azureIdentityModule) as {
+      // @azure/identity is bundled by esbuild but only loaded when managed identity is selected.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const identityModule = require('@azure/identity') as {
         DefaultAzureCredential: new () => {
           getToken(scope: string): Promise<{ token: string }>
         }

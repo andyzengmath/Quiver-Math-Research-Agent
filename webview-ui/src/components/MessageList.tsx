@@ -10,6 +10,7 @@ export interface Message {
   readonly role: 'user' | 'assistant'
   readonly content: string
   readonly childCount?: number
+  readonly model?: string
 }
 
 export interface MessageListProps {
@@ -49,11 +50,28 @@ export function MessageList({
 
   // Auto-scroll to bottom when messages change (including streaming content updates)
   const lastMsgContent = messages.length > 0 ? messages[messages.length - 1].content : ''
+  const lastMsgLen = lastMsgContent.length
   useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.scrollTop = containerRef.current.scrollHeight
+    // Use requestAnimationFrame to scroll after DOM updates
+    requestAnimationFrame(() => {
+      if (containerRef.current) {
+        containerRef.current.scrollTop = containerRef.current.scrollHeight
+      }
+    })
+  }, [messages.length, lastMsgLen])
+
+  // Backup: MutationObserver to catch DOM changes during streaming
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container || !streamingNodeId) {
+      return
     }
-  }, [messages.length, lastMsgContent])
+    const observer = new MutationObserver(() => {
+      container.scrollTop = container.scrollHeight
+    })
+    observer.observe(container, { childList: true, subtree: true, characterData: true })
+    return () => observer.disconnect()
+  }, [streamingNodeId])
 
   const handleDismissCitation = useCallback(
     (nodeId: string, url: string) => {
@@ -80,6 +98,7 @@ export function MessageList({
               content={msg.content}
               nodeId={msg.id}
               childCount={msg.childCount}
+              model={msg.model}
               onDeleteBranch={onDeleteBranch}
               onFork={onFork}
               isStreaming={msg.id === streamingNodeId}

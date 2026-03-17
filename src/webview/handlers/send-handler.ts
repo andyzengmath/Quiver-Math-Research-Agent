@@ -4,6 +4,7 @@ import { WebviewToHost } from '../protocol'
 import type { MathResearchPanel } from '../panel'
 import { runMultiAgent, getMultiAgentPersonaIds } from '../../chat/multi-agent'
 import type { Citation, RagStatus as KnowledgeRagStatus } from '../../knowledge/types'
+import { getRandomThinkingMessage } from '../../utils/math-thinking'
 
 /**
  * Converts internal RagStatus (from knowledge layer) to the simplified
@@ -175,6 +176,13 @@ export function registerSendHandler(registry: MessageHandlerRegistry): void {
       panel.cancelActiveStream()
       return
     }
+
+    // Send thinking indicator immediately (before RAG and LLM calls)
+    panel.postToWebview({
+      type: 'streamStart',
+      nodeId: `thinking-${Date.now()}`,
+      thinkingMessage: getRandomThinkingMessage(),
+    })
 
     // Check if RAG is enabled and enrich the message with citations
     const ragConfig = vscode.workspace.getConfiguration('mathAgent.rag')

@@ -9,7 +9,7 @@ export interface LlmOptions {
   readonly model?: string
   readonly maxTokens?: number
   readonly temperature?: number
-  readonly reasoningEffort?: 'low' | 'medium' | 'high'
+  readonly reasoningEffort?: 'none' | 'minimal' | 'low' | 'medium' | 'high' | 'xhigh'
 }
 
 export interface LlmProvider {

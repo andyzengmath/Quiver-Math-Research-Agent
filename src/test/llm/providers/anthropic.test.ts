@@ -275,7 +275,7 @@ describe('AnthropicProvider', () => {
       )
 
       const callArgs = createStub.firstCall.args[0]
-      assert.equal(callArgs.model, 'claude-sonnet-4-20250514')
+      assert.equal(callArgs.model, 'claude-sonnet-4-6')
     })
 
     it('uses default maxTokens when none specified', async () => {
@@ -378,6 +378,118 @@ describe('AnthropicProvider', () => {
 
       const callArgs = createStub.firstCall.args[0]
       assert.equal(callArgs.temperature, 0.7)
+    })
+  })
+
+  describe('extended thinking / reasoning effort', () => {
+    it('passes thinking config with budget_tokens for "low" effort', async () => {
+      getApiKey.resolves('sk-ant-test-key')
+
+      const fakeStream = createFakeStream(['ok'])
+      const createStub = sandbox.stub().resolves(fakeStream)
+
+      const provider = new AnthropicProvider(getApiKey, () => ({
+        messages: { create: createStub },
+      } as unknown as Anthropic))
+
+      await collectChunks(
+        provider.sendMessage(
+          [{ role: 'user', content: 'test' }],
+          { reasoningEffort: 'low' },
+          tokenSource.token
+        )
+      )
+
+      const callArgs = createStub.firstCall.args[0]
+      assert.deepEqual(callArgs.thinking, { type: 'enabled', budget_tokens: 2000 })
+    })
+
+    it('passes thinking config with budget_tokens for "medium" effort', async () => {
+      getApiKey.resolves('sk-ant-test-key')
+
+      const fakeStream = createFakeStream(['ok'])
+      const createStub = sandbox.stub().resolves(fakeStream)
+
+      const provider = new AnthropicProvider(getApiKey, () => ({
+        messages: { create: createStub },
+      } as unknown as Anthropic))
+
+      await collectChunks(
+        provider.sendMessage(
+          [{ role: 'user', content: 'test' }],
+          { reasoningEffort: 'medium' },
+          tokenSource.token
+        )
+      )
+
+      const callArgs = createStub.firstCall.args[0]
+      assert.deepEqual(callArgs.thinking, { type: 'enabled', budget_tokens: 5000 })
+    })
+
+    it('passes thinking config with budget_tokens for "high" effort', async () => {
+      getApiKey.resolves('sk-ant-test-key')
+
+      const fakeStream = createFakeStream(['ok'])
+      const createStub = sandbox.stub().resolves(fakeStream)
+
+      const provider = new AnthropicProvider(getApiKey, () => ({
+        messages: { create: createStub },
+      } as unknown as Anthropic))
+
+      await collectChunks(
+        provider.sendMessage(
+          [{ role: 'user', content: 'test' }],
+          { reasoningEffort: 'high' },
+          tokenSource.token
+        )
+      )
+
+      const callArgs = createStub.firstCall.args[0]
+      assert.deepEqual(callArgs.thinking, { type: 'enabled', budget_tokens: 10000 })
+    })
+
+    it('passes thinking config with budget_tokens for "xhigh" effort', async () => {
+      getApiKey.resolves('sk-ant-test-key')
+
+      const fakeStream = createFakeStream(['ok'])
+      const createStub = sandbox.stub().resolves(fakeStream)
+
+      const provider = new AnthropicProvider(getApiKey, () => ({
+        messages: { create: createStub },
+      } as unknown as Anthropic))
+
+      await collectChunks(
+        provider.sendMessage(
+          [{ role: 'user', content: 'test' }],
+          { reasoningEffort: 'xhigh' },
+          tokenSource.token
+        )
+      )
+
+      const callArgs = createStub.firstCall.args[0]
+      assert.deepEqual(callArgs.thinking, { type: 'enabled', budget_tokens: 20000 })
+    })
+
+    it('does not include thinking config when no reasoning effort specified', async () => {
+      getApiKey.resolves('sk-ant-test-key')
+
+      const fakeStream = createFakeStream(['ok'])
+      const createStub = sandbox.stub().resolves(fakeStream)
+
+      const provider = new AnthropicProvider(getApiKey, () => ({
+        messages: { create: createStub },
+      } as unknown as Anthropic))
+
+      await collectChunks(
+        provider.sendMessage(
+          [{ role: 'user', content: 'test' }],
+          {},
+          tokenSource.token
+        )
+      )
+
+      const callArgs = createStub.firstCall.args[0]
+      assert.equal(callArgs.thinking, undefined)
     })
   })
 })

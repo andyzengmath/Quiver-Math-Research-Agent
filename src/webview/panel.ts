@@ -180,6 +180,14 @@ export class MathResearchPanel {
       }
       await vscode.env.openExternal(uri)
     })
+
+    this.registry.register('setReasoningEffort', async (msg, _panel) => {
+      if (msg.type !== 'setReasoningEffort') {
+        return
+      }
+      const config = vscode.workspace.getConfiguration('mathAgent.llm')
+      await config.update('reasoningEffort', msg.effort, vscode.ConfigurationTarget.Global)
+    })
   }
 
   public postToWebview(msg: HostToWebview): void {

@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 import Anthropic from '@anthropic-ai/sdk'
 import { LlmAuthError, LlmMessage, LlmOptions, LlmProvider, LlmRateLimitError } from '../types'
 
-const DEFAULT_MODEL = 'claude-sonnet-4-20250514'
+const DEFAULT_MODEL = 'claude-sonnet-4-6'
 const DEFAULT_MAX_TOKENS = 4096
 
 type ClientFactory = (apiKey: string) => Anthropic
@@ -55,7 +55,7 @@ export class AnthropicProvider implements LlmProvider {
         messages: anthropicMessages,
         ...(systemParam !== undefined ? { system: systemParam } : {}),
         ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
-        ...(options.reasoningEffort === 'high' ? { thinking: { type: 'enabled' as const, budget_tokens: 10000 } } : {}),
+        ...(this.getThinkingConfig(options.reasoningEffort)),
       })
 
       for await (const event of stream as AsyncIterable<Anthropic.MessageStreamEvent>) {
@@ -80,5 +80,20 @@ export class AnthropicProvider implements LlmProvider {
       }
       throw error
     }
+  }
+
+  private getThinkingConfig(effort?: string): Record<string, unknown> {
+    // Map reasoning effort to Anthropic's extended thinking budget
+    const budgetMap: Record<string, number> = {
+      'low': 2000,
+      'medium': 5000,
+      'high': 10000,
+      'xhigh': 20000,
+    }
+    const budget = effort ? budgetMap[effort] : undefined
+    if (budget) {
+      return { thinking: { type: 'enabled', budget_tokens: budget } }
+    }
+    return {}
   }
 }

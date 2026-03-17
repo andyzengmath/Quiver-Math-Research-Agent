@@ -7,6 +7,7 @@ export interface MessageBubbleProps {
   readonly content: string
   readonly nodeId?: string
   readonly childCount?: number
+  readonly model?: string
   readonly onDeleteBranch?: (nodeId: string) => void
   readonly onFork?: (nodeId: string) => void
   readonly isStreaming?: boolean
@@ -20,6 +21,7 @@ export function MessageBubble({
   content,
   nodeId,
   childCount,
+  model,
   onDeleteBranch,
   onFork,
   isStreaming,
@@ -104,6 +106,9 @@ export function MessageBubble({
       className={`message-bubble ${role === 'user' ? 'user-message' : 'assistant-message'}`}
       onContextMenu={handleContextMenu}
     >
+      {role === 'assistant' && model && (
+        <div className="message-model-label">{model}</div>
+      )}
       <div
         className="message-content"
         dangerouslySetInnerHTML={{ __html: rendered }}

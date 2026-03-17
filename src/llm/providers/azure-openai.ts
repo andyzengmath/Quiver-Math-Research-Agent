@@ -56,9 +56,10 @@ export class AzureOpenAiProvider implements LlmProvider {
         azureADTokenProvider: opts.azureADTokenProvider,
       })
     )
-    const azureIdentityModule = '@azure/identity'
     this.importIdentity = identityImporter ?? (async () => {
-      const mod = await import(/* webpackIgnore: true */ azureIdentityModule)
+      // Use require() instead of dynamic import() so esbuild can bundle @azure/identity
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const mod = require('@azure/identity')
       return mod as unknown as AzureIdentityModule
     })
   }
@@ -94,6 +95,38 @@ export class AzureOpenAiProvider implements LlmProvider {
       ? await this.createManagedIdentityClient(endpoint, deployment, apiVersion)
       : await this.createApiKeyClient(endpoint, deployment, apiVersion)
 
+    // Try Chat Completions API first, fall back to Responses API if model doesn't support it
+    yield* await this.tryStreamWithFallback(client, deployment, messages, options)
+  }
+
+  private async *tryStreamWithFallback(
+    client: AzureOpenAI,
+    deployment: string,
+    messages: LlmMessage[],
+    options: LlmOptions
+  ): AsyncIterable<string> {
+    // First attempt: Chat Completions API
+    try {
+      yield* this.streamChatCompletions(client, deployment, messages, options)
+      return
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err)
+      if (errMsg.includes('does not work with the specified model')) {
+        // Model requires Responses API (e.g., GPT-5.4 Pro)
+        yield* this.streamResponses(client, deployment, messages, options)
+        return
+      }
+      // Map SDK errors to typed errors before rethrowing
+      throw this.mapError(err)
+    }
+  }
+
+  private async *streamChatCompletions(
+    client: AzureOpenAI,
+    deployment: string,
+    messages: LlmMessage[],
+    options: LlmOptions
+  ): AsyncIterable<string> {
     const requestParams: OpenAI.Chat.ChatCompletionCreateParamsStreaming = {
       model: deployment,
       messages: messages.map((m) => ({
@@ -115,17 +148,56 @@ export class AzureOpenAiProvider implements LlmProvider {
       (requestParams as unknown as Record<string, unknown>).reasoning_effort = options.reasoningEffort
     }
 
-    let stream: AsyncIterable<OpenAI.Chat.ChatCompletionChunk>
-    try {
-      stream = await client.chat.completions.create(requestParams)
-    } catch (err: unknown) {
-      throw this.mapError(err)
-    }
+    const stream = await client.chat.completions.create(requestParams)
 
     for await (const chunk of stream) {
       const content = chunk.choices[0]?.delta?.content
       if (content != null) {
         yield content
+      }
+    }
+  }
+
+  private async *streamResponses(
+    client: AzureOpenAI,
+    deployment: string,
+    messages: LlmMessage[],
+    options: LlmOptions
+  ): AsyncIterable<string> {
+    // Responses API uses client.responses.create() with 'input' instead of 'messages'
+    const responsesClient = client as unknown as {
+      responses: {
+        create(params: Record<string, unknown>): Promise<AsyncIterable<{ type: string; delta?: string }>>
+      }
+    }
+
+    const requestParams: Record<string, unknown> = {
+      model: deployment,
+      input: messages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      })),
+      stream: true,
+    }
+
+    if (options.reasoningEffort) {
+      requestParams.reasoning = { effort: options.reasoningEffort }
+    }
+
+    if (options.maxTokens !== undefined) {
+      requestParams.max_output_tokens = options.maxTokens
+    }
+
+    let stream: AsyncIterable<{ type: string; delta?: string }>
+    try {
+      stream = await responsesClient.responses.create(requestParams)
+    } catch (err: unknown) {
+      throw this.mapError(err)
+    }
+
+    for await (const event of stream) {
+      if (event.type === 'response.output_text.delta' && event.delta) {
+        yield event.delta
       }
     }
   }
@@ -146,6 +218,12 @@ export class AzureOpenAiProvider implements LlmProvider {
     return this.createClient({ endpoint, deployment, apiVersion, azureADTokenProvider: tokenProvider })
   }
 
+  private lastAuthSource: string = ''
+
+  public getLastAuthSource(): string {
+    return this.lastAuthSource
+  }
+
   private async buildTokenProvider(): Promise<() => Promise<string>> {
     const identityModule = await this.importIdentity()
     const defaultCredential = new identityModule.DefaultAzureCredential()
@@ -153,6 +231,7 @@ export class AzureOpenAiProvider implements LlmProvider {
     // Discover which credential works and cache the first token
     try {
       const initial = await defaultCredential.getToken(TOKEN_SCOPE)
+      this.lastAuthSource = 'DefaultAzureCredential (Managed Identity / Azure CLI / Environment)'
       let cachedToken = initial.token
       let used = false
       return async () => {
@@ -169,6 +248,7 @@ export class AzureOpenAiProvider implements LlmProvider {
         const browserCredential = new identityModule.InteractiveBrowserCredential()
         try {
           const initial = await browserCredential.getToken(TOKEN_SCOPE)
+          this.lastAuthSource = 'InteractiveBrowserCredential (Browser login)'
           let cachedToken = initial.token
           let used = false
           return async () => {

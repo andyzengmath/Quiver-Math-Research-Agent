@@ -26,6 +26,13 @@
   position: relative;
 }
 
+.message-model-label {
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground, #888);
+  margin-bottom: 4px;
+  opacity: 0.7;
+}
+
 .message-bubble:hover .fork-button {
   opacity: 1;
 }
@@ -282,6 +289,36 @@
   font-size: 10px;
 }
 
+/* Thinking indicator */
+.thinking-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground, #888);
+  font-style: italic;
+  animation: thinking-pulse 2s ease-in-out infinite;
+}
+
+.thinking-message {
+  flex: 1;
+}
+
+.thinking-timer {
+  font-family: var(--vscode-editor-font-family, monospace);
+  font-style: normal;
+  font-size: 11px;
+  opacity: 0.7;
+  min-width: 45px;
+  text-align: right;
+}
+
+@keyframes thinking-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
 /* Stop button */
 .stop-button {
   background-color: var(--vscode-inputValidation-errorBackground, #5a1d1d);
@@ -314,6 +351,40 @@
   gap: 8px;
   padding: 0 12px;
   flex-shrink: 0;
+}
+
+/* Persona Selector */
+.persona-selector {
+  padding: 2px 6px;
+  background: var(--vscode-dropdown-background, var(--vscode-input-background));
+  color: var(--vscode-dropdown-foreground, var(--vscode-editor-foreground));
+  border: 1px solid var(--vscode-dropdown-border, var(--vscode-input-border));
+  border-radius: 3px;
+  font-size: 11px;
+  font-family: var(--vscode-font-family, sans-serif);
+  cursor: pointer;
+}
+
+.persona-selector:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Reasoning Effort Selector */
+.reasoning-effort-selector {
+  padding: 2px 6px;
+  background: var(--vscode-dropdown-background, var(--vscode-input-background));
+  color: var(--vscode-dropdown-foreground, var(--vscode-editor-foreground));
+  border: 1px solid var(--vscode-dropdown-border, var(--vscode-input-border));
+  border-radius: 3px;
+  font-size: 11px;
+  font-family: var(--vscode-font-family, sans-serif);
+  cursor: pointer;
+}
+
+.reasoning-effort-selector:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Export Button */

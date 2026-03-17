@@ -1,19 +1,16 @@
 import * as vscode from 'vscode'
-import {
-  GoogleGenerativeAI,
-  GoogleGenerativeAIFetchError,
-} from '@google/generative-ai'
+import { GoogleGenAI } from '@google/genai'
 import { LlmAuthError, LlmMessage, LlmOptions, LlmProvider, LlmRateLimitError } from '../types'
 import { LlmService } from '../service'
 
-const DEFAULT_MODEL = 'gemini-3.1-pro'
+const DEFAULT_MODEL = 'gemini-3.1-pro-preview'
 const SECRET_KEY = 'google-api-key'
 
-type GoogleAIFactory = (apiKey: string) => GoogleGenerativeAI
+type GoogleAIFactory = (apiKey: string) => GoogleGenAI
 
 /**
  * Google AI (Gemini) LLM provider implementation.
- * Creates streaming content using the @google/generative-ai SDK.
+ * Uses the @google/genai SDK (GA as of 2025).
  */
 export class GoogleProvider implements LlmProvider {
   readonly id = 'google'
@@ -23,7 +20,7 @@ export class GoogleProvider implements LlmProvider {
 
   constructor(llmService: LlmService, clientFactory?: GoogleAIFactory) {
     this.llmService = llmService
-    this.createClient = clientFactory ?? ((apiKey: string) => new GoogleGenerativeAI(apiKey))
+    this.createClient = clientFactory ?? ((apiKey: string) => new GoogleGenAI({ apiKey }))
   }
 
   async *sendMessage(
@@ -40,6 +37,7 @@ export class GoogleProvider implements LlmProvider {
     const model = options.model ?? this.getModelFromConfig() ?? DEFAULT_MODEL
     const client = this.createClient(apiKey)
 
+    // Separate system messages from conversation
     const systemMessages = messages.filter((m) => m.role === 'system')
     const nonSystemMessages = messages.filter((m) => m.role !== 'system')
 
@@ -47,35 +45,39 @@ export class GoogleProvider implements LlmProvider {
       ? systemMessages.map((m) => m.content).join('\n')
       : undefined
 
-    const generativeModel = client.getGenerativeModel({
-      model,
-      ...(systemInstruction !== undefined ? { systemInstruction } : {}),
-    })
-
     const contents = nonSystemMessages.map((m) => ({
       role: m.role === 'assistant' ? 'model' : m.role,
       parts: [{ text: m.content }],
     }))
 
     try {
-      const result = await generativeModel.generateContentStream({
+      const response = await client.models.generateContentStream({
+        model,
         contents,
+        config: {
+          ...(systemInstruction !== undefined ? { systemInstruction } : {}),
+          ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
+          ...(options.maxTokens !== undefined ? { maxOutputTokens: options.maxTokens } : {}),
+        },
       })
 
-      for await (const chunk of result.stream) {
-        yield chunk.text()
+      for await (const chunk of response) {
+        const text = chunk.text
+        if (text) {
+          yield text
+        }
       }
     } catch (error: unknown) {
       if (error instanceof LlmAuthError || error instanceof LlmRateLimitError) {
         throw error
       }
-      if (error instanceof GoogleGenerativeAIFetchError) {
-        if (error.status === 401 || error.status === 403) {
-          throw new LlmAuthError('google', `Google AI authentication failed: ${error.message}`)
-        }
-        if (error.status === 429) {
-          throw new LlmRateLimitError(`Google AI rate limit exceeded: ${error.message}`)
-        }
+      const errMsg = error instanceof Error ? error.message : String(error)
+      const status = (error as { status?: number }).status
+      if (status === 401 || status === 403) {
+        throw new LlmAuthError('google', `Google AI authentication failed: ${errMsg}`)
+      }
+      if (status === 429) {
+        throw new LlmRateLimitError(`Google AI rate limit exceeded: ${errMsg}`)
       }
       throw error
     }
