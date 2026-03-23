@@ -4,3 +4,4 @@ out/
 .claude/worktrees/
 *.js.map
 quantum.json
+*.vsix

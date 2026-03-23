@@ -159,46 +159,64 @@ export class AzureOpenAiProvider implements LlmProvider {
   }
 
   private async *streamResponses(
-    client: AzureOpenAI,
+    _client: AzureOpenAI,
     deployment: string,
     messages: LlmMessage[],
     options: LlmOptions
   ): AsyncIterable<string> {
-    // Responses API uses client.responses.create() with 'input' instead of 'messages'
-    const responsesClient = client as unknown as {
-      responses: {
-        create(params: Record<string, unknown>): Promise<AsyncIterable<{ type: string; delta?: string }>>
-      }
+    // Responses API requires api-version 2025-04-01-preview or newer.
+    // The Chat Completions client was created with an older api-version,
+    // so we must create a fresh client with the correct version.
+    const config = vscode.workspace.getConfiguration('mathAgent.llm')
+    const endpoint = config.get<string>('azureEndpoint') ?? ''
+    const authMethod = config.get<string>('azureAuthMethod') ?? 'api-key'
+
+    const RESPONSES_API_VERSION = '2025-04-01-preview'
+
+    let responsesClient: AzureOpenAI
+    if (authMethod === 'managed-identity') {
+      const tokenProvider = await this.buildTokenProvider()
+      responsesClient = new AzureOpenAI({
+        endpoint,
+        deployment,
+        apiVersion: RESPONSES_API_VERSION,
+        azureADTokenProvider: tokenProvider,
+      })
+    } else {
+      const apiKey = await this.llmService.getApiKey(SECRET_KEY)
+      responsesClient = new AzureOpenAI({
+        apiKey: apiKey ?? '',
+        endpoint,
+        deployment,
+        apiVersion: RESPONSES_API_VERSION,
+      })
     }
 
-    const requestParams: Record<string, unknown> = {
-      model: deployment,
-      input: messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      })),
-      stream: true,
-    }
+    const input = messages.map((m) => ({
+      role: m.role as 'user' | 'assistant' | 'system',
+      content: m.content,
+    }))
 
-    if (options.reasoningEffort) {
-      requestParams.reasoning = { effort: options.reasoningEffort }
-    }
-
-    if (options.maxTokens !== undefined) {
-      requestParams.max_output_tokens = options.maxTokens
-    }
-
-    let stream: AsyncIterable<{ type: string; delta?: string }>
     try {
-      stream = await responsesClient.responses.create(requestParams)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const stream = await (responsesClient as any).responses.create({
+        model: deployment,
+        input,
+        stream: true,
+        ...(options.reasoningEffort ? { reasoning: { effort: options.reasoningEffort as 'low' | 'medium' | 'high' } } : {}),
+        ...(options.maxTokens !== undefined ? { max_output_tokens: options.maxTokens } : {}),
+      })
+
+      for await (const event of stream) {
+        if (event.type === 'response.output_text.delta') {
+          const delta = (event as unknown as { delta: string }).delta
+          if (delta) {
+            yield delta
+          }
+        }
+      }
     } catch (err: unknown) {
       throw this.mapError(err)
-    }
-
-    for await (const event of stream) {
-      if (event.type === 'response.output_text.delta' && event.delta) {
-        yield event.delta
-      }
     }
   }
 
