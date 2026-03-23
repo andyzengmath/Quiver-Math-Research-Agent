@@ -109,8 +109,8 @@
         },
         "mathAgent.llm.azureApiVersion": {
           "type": "string",
-          "default": "2025-01-01-preview",
-          "description": "Azure OpenAI API version"
+          "default": "2025-03-01-preview",
+          "description": "Azure OpenAI API version (2025-03-01-preview or later required for Responses API)"
         },
         "mathAgent.llm.entityDetectionModel": {
           "type": "string",
@@ -254,7 +254,7 @@
     "@google/generative-ai": "^0.24.0",
     "cheerio": "^1.2.0",
     "fast-xml-parser": "^5.4.2",
-    "openai": "^4.77.0",
+    "openai": "^6.32.0",
     "pdf-parse": "^2.4.5",
     "uuid": "^13.0.0"
   }
